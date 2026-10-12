@@ -37,16 +37,21 @@ export default function RegisterPage() {
         <div className="story-content">
           <div className="story-orbit"><span>+</span><i /><i /><i /></div>
           <p className="eyebrow">COMECE COM O PÉ DIREITO</p>
-          <h1>Organização hoje.<br />Mais planos amanhã.</h1>
-          <p>Crie sua conta para registrar suas movimentações e visualizar sua evolução financeira.</p>
+          <h1>Uma gestão melhor<br />começa com clareza.</h1>
+          <p>Crie seu acesso e reúna contas, categorias e custos da empresa em um só lugar.</p>
+          <div className="auth-feature-list">
+            <div><span>↗</span><p><strong>Veja o caixa com clareza</strong><small>Separe valores realizados e contas previstas.</small></p></div>
+            <div><span>▣</span><p><strong>Organize vencimentos</strong><small>Saiba o que precisa ser pago ou recebido.</small></p></div>
+            <div><span>▤</span><p><strong>Entenda os custos</strong><small>Agrupe despesas por área e categoria.</small></p></div>
+          </div>
         </div>
         <small className="story-footer">Simples de usar. Feito para acompanhar você.</small>
       </section>
       <section className="auth-main register-main">
         <div className="auth-card register-card">
-          <p className="eyebrow">SEU ESPAÇO FINANCEIRO</p>
-          <h2>Crie sua conta</h2>
-          <p className="auth-intro">Preencha os dados para começar a organizar suas finanças.</p>
+          <p className="eyebrow">ACESSO À GESTÃO FINANCEIRA</p>
+          <h2>Vamos organizar sua empresa.</h2>
+          <p className="auth-intro">Crie seu acesso para começar a acompanhar as finanças do negócio.</p>
           {error && <div className="alert alert-error" role="alert">{error}</div>}
           <form className="auth-form register-form" onSubmit={handleSubmit}>
             <label className="field-label" htmlFor="fullName">Nome completo<input autoComplete="name" className="input-control" id="fullName" type="text" maxLength={120} required value={form.fullName} onChange={(event) => setForm({ ...form, fullName: event.target.value })} placeholder="Como podemos chamar você?" /></label>

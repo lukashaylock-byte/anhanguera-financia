@@ -15,9 +15,14 @@ type DashboardTransaction = {
   costCenter: string;
 };
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ novo?: string | string[] }>;
+}) {
   const user = await getAuthenticatedUser();
   if (!user) redirect('/login');
+  const params = await searchParams;
 
   const transactions = await prisma.transaction.findMany({
     where: { userId: user.id },
@@ -45,6 +50,7 @@ export default async function DashboardPage() {
     <DashboardClient
       initialUser={user}
       initialTransactions={initialTransactions}
+      initialShowForm={params.novo === '1'}
     />
   );
 }

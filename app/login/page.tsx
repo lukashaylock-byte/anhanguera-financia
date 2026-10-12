@@ -38,16 +38,21 @@ export default function LoginPage() {
         <div className="story-content">
           <div className="story-orbit"><span>R$</span><i /><i /><i /></div>
           <p className="eyebrow">CLAREZA PARA ESCOLHER MELHOR</p>
-          <h1>Seu dinheiro,<br />em boas mãos.</h1>
-          <p>Organize suas entradas e saídas, acompanhe seus resultados e cuide dos seus planos com mais tranquilidade.</p>
+          <h1>Mais clareza<br />para cada decisão.</h1>
+          <p>Uma visão organizada das contas, dos vencimentos e dos custos da sua empresa — para decidir com mais segurança.</p>
+          <div className="auth-feature-list">
+            <div><span>↗</span><p><strong>Fluxo de caixa claro</strong><small>Acompanhe o realizado e o que ainda está previsto.</small></p></div>
+            <div><span>▣</span><p><strong>Contas sem surpresas</strong><small>Visualize vencimentos, pendências e atrasos.</small></p></div>
+            <div><span>▤</span><p><strong>Custos por área</strong><small>Organize despesas por projeto, equipe ou filial.</small></p></div>
+          </div>
         </div>
         <small className="story-footer">Uma vida financeira mais simples começa por aqui.</small>
       </section>
       <section className="auth-main">
         <div className="auth-card">
-          <p className="eyebrow">BEM-VINDO DE VOLTA</p>
-          <h2>Acesse sua conta</h2>
-          <p className="auth-intro">Entre para continuar acompanhando suas finanças.</p>
+          <p className="eyebrow">ÁREA FINANCEIRA DA EMPRESA</p>
+          <h2>Bom ter você de volta.</h2>
+          <p className="auth-intro">Entre para acompanhar contas, resultados e próximos vencimentos.</p>
           {error && <div className="alert alert-error" role="alert">{error}</div>}
           <form className="auth-form" onSubmit={handleSubmit}>
             <label className="field-label" htmlFor="email">E-mail<input autoComplete="email" className="input-control" id="email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="voce@exemplo.com" /></label>

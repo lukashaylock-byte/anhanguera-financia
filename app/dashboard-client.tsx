@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useCallback, useMemo, useState } from 'react';
+import AppSidebar from './components/app-sidebar';
 
 type Transaction = {
   id: string;
@@ -28,9 +29,11 @@ const currentMonth = () => today().slice(0, 7);
 export default function DashboardClient({
   initialUser,
   initialTransactions,
+  initialShowForm,
 }: {
   initialUser: User;
   initialTransactions: Transaction[];
+  initialShowForm: boolean;
 }) {
   const router = useRouter();
   const [user] = useState<User>(initialUser);
@@ -40,7 +43,7 @@ export default function DashboardClient({
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('TODOS');
   const [statusFilter, setStatusFilter] = useState('TODOS');
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(initialShowForm);
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
@@ -253,18 +256,7 @@ export default function DashboardClient({
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <Link href="/" className="brand"><span className="brand-mark">A</span><span><span className="brand-name">Anhanguera</span><span className="brand-light">Financia</span></span></Link>
-        <p className="nav-caption">MENU PRINCIPAL</p>
-        <nav className="side-nav" aria-label="Navegação principal">
-          <Link href="/" className="nav-link active"><span className="nav-icon">◫</span>Visão geral</Link>
-          <Link href="/relatorios" className="nav-link"><span className="nav-icon">▥</span>Relatórios</Link>
-        </nav>
-        <div className="sidebar-bottom">
-          <div className="security-note"><span className="security-dot" /><div><strong>Seus dados protegidos</strong><small>Privacidade em primeiro lugar</small></div></div>
-          <button className="nav-link logout-button" onClick={logout}><span className="nav-icon">↪</span>Sair da conta</button>
-        </div>
-      </aside>
+      <AppSidebar fullName={user.fullName} email={user.email} onLogout={() => void logout()} />
 
       <main className="main-content">
         <header className="topbar">
@@ -274,7 +266,7 @@ export default function DashboardClient({
 
         <section className="page-heading">
           <div><p className="eyebrow">SEU RESUMO FINANCEIRO</p><h1>Visão geral</h1><p className="muted">Acompanhe sua vida financeira em um só lugar.</p></div>
-          <button className="button button-primary" onClick={openNewTransaction}><span>＋</span> Novo lançamento</button>
+          <button className="button button-primary" id="novo-lancamento" onClick={openNewTransaction}><span>＋</span> Novo lançamento</button>
         </section>
 
         {error && <div className="alert alert-error" role="alert">{error}<button onClick={() => setError('')} aria-label="Fechar aviso">×</button></div>}
@@ -302,7 +294,7 @@ export default function DashboardClient({
             <label className="field-label" htmlFor="month-filter">Mês de referência</label>
             <input className="input-control" id="month-filter" type="month" value={month} onChange={(event) => setMonth(event.target.value)} />
             <div className="period-summary"><span>Contas a receber</span><strong className="positive-text">{currency.format(pendingIncome)}</strong><span>Contas a pagar</span><strong className="negative-text">{currency.format(pendingExpenses)}</strong><span>Saldo projetado</span><strong className={projectedBalance >= 0 ? 'positive-text' : 'negative-text'}>{currency.format(projectedBalance)}</strong></div>
-            <Link className="text-link" href="/relatorios">Ver relatório completo <span>→</span></Link>
+            <div className="quick-links"><Link className="text-link" href="/contas">Gerenciar contas <span>→</span></Link><Link className="text-link" href="/centros-de-custo">Ver custos por área <span>→</span></Link><Link className="text-link" href="/relatorios">Ver relatório completo <span>→</span></Link></div>
           </article>
         </section>
 

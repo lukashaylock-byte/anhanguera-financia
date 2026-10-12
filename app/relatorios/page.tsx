@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import AppSidebar from '../components/app-sidebar';
 
 type Transaction = {
   id: string;
@@ -15,7 +16,7 @@ type Transaction = {
   status: 'PENDENTE' | 'PAGO';
   costCenter: string;
 };
-type User = { fullName: string };
+type User = { fullName: string; email: string };
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const currentMonth = () => {
   const date = new Date();
@@ -91,12 +92,7 @@ export default function RelatoriosPage() {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <Link href="/" className="brand"><span className="brand-mark">A</span><span><span className="brand-name">Anhanguera</span><span className="brand-light">Financia</span></span></Link>
-        <p className="nav-caption">MENU PRINCIPAL</p>
-        <nav className="side-nav" aria-label="Navegação principal"><Link href="/" className="nav-link"><span className="nav-icon">◫</span>Visão geral</Link><Link href="/relatorios" className="nav-link active"><span className="nav-icon">▥</span>Relatórios</Link></nav>
-        <div className="sidebar-bottom"><div className="security-note"><span className="security-dot" /><div><strong>Seus dados protegidos</strong><small>Privacidade em primeiro lugar</small></div></div><button className="nav-link logout-button" type="button" onClick={async () => { const response = await fetch('/api/auth/logout', { method: 'POST' }); if (response.ok) router.replace('/login'); else setError('Não foi possível encerrar a sessão.'); }}><span className="nav-icon">↪</span>Sair da conta</button></div>
-      </aside>
+      <AppSidebar fullName={user?.fullName ?? ''} email={user?.email} onLogout={() => { void (async () => { const response = await fetch('/api/auth/logout', { method: 'POST' }); if (response.ok) router.replace('/login'); else setError('Não foi possível encerrar a sessão.'); })(); }} />
       <main className="main-content">
         <header className="topbar"><div className="breadcrumb"><Link href="/">Painel</Link><span>/</span>Relatórios</div><div className="account-chip"><span className="avatar">{user?.fullName.slice(0, 1).toUpperCase() || 'U'}</span><div><strong>{user?.fullName}</strong><small>Relatório financeiro</small></div></div></header>
         <section className="page-heading"><div><p className="eyebrow">ANÁLISE DAS SUAS FINANÇAS</p><h1>Relatórios</h1><p className="muted">Entenda para onde seu dinheiro está indo.</p></div><button className="button button-secondary" onClick={() => window.print()}>⌑ Imprimir relatório</button></section>
@@ -107,7 +103,7 @@ export default function RelatoriosPage() {
         <section className="panel category-report"><div className="panel-heading"><div><h2>Despesas por categoria</h2><p className="muted">Distribuição das saídas de {monthLabel}</p></div></div>
           {report.categories.length ? <div className="category-list">{report.categories.map(([name, total]) => <div className="category-report-row" key={name}><div className="category-row-heading"><strong>{name}</strong><span>{currency.format(total)} <small>{report.expenses ? `${((total / report.expenses) * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%` : ''}</small></span></div><div className="category-track"><span style={{ width: `${report.expenses ? total / report.expenses * 100 : 0}%` }} /></div></div>)}</div> : <div className="empty-state report-empty"><span className="empty-icon">▥</span><strong>Sem despesas neste período</strong><p>Quando você adicionar saídas, o detalhamento por categoria aparecerá aqui.</p></div>}
         </section>
-        <section className="panel category-report"><div className="panel-heading"><div><h2>Despesas por centro de custo</h2><p className="muted">Valores pagos em cada área, projeto ou filial</p></div></div>
+        <section className="panel category-report"><div className="panel-heading"><div><h2>Despesas por centro de custo</h2><p className="muted">Valores pagos em cada área, projeto ou filial</p></div><Link className="text-link" href="/centros-de-custo">Abrir análise detalhada →</Link></div>
           {report.costCenters.length ? <div className="category-list">{report.costCenters.map(([name, total]) => <div className="category-report-row" key={name}><div className="category-row-heading"><strong>{name}</strong><span>{currency.format(total)} <small>{report.expenses ? `${((total / report.expenses) * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%` : ''}</small></span></div><div className="category-track"><span style={{ width: `${report.expenses ? total / report.expenses * 100 : 0}%` }} /></div></div>)}</div> : <div className="empty-state report-empty"><span className="empty-icon">▥</span><strong>Sem despesas neste período</strong><p>Cadastre despesas para visualizar os custos por área, projeto ou filial.</p></div>}
         </section>
         <section className="panel report-transactions"><div className="panel-heading"><div><h2>Movimentações do período</h2><p className="muted">{report.rows.length} lançamento(s) em {monthLabel}</p></div><Link className="text-link" href="/">Ir para lançamentos →</Link></div>

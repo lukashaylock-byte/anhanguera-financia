@@ -47,6 +47,8 @@ Aplicação de gestão financeira com contas individuais, lançamentos persistid
 - Lançamentos de receitas e despesas com categorias livres, vencimentos, situação e centros de custo.
 - Contas pendentes a pagar e a receber, com baixa rápida após pagamento ou recebimento.
 - Painel de fluxo de caixa mensal com valores realizados e saldo projetado.
+- Página de contas a pagar e receber com filtros por situação e tipo, vencimentos e baixa rápida.
+- Análise dedicada de centros de custo com despesas agrupadas por área, categoria ou projeto.
 - Busca, filtros, edição, exclusão e exportação CSV com vencimento, situação e centro de custo.
 - Relatórios mensais com despesas por categoria e por centro de custo.
 - Dados de cada conta filtrados no servidor pela sessão autenticada.
