@@ -17,7 +17,7 @@ type Transaction = {
   costCenter: string;
 };
 
-type Workspace = { id: string; name: string; role: string };
+type Workspace = { id: string; name: string; role: string; workspaceType: string };
 type User = { fullName: string; email: string; companyId: string; companyName: string; workspaces: Workspace[] };
 
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -120,7 +120,7 @@ export default function ContasPage() {
       <AppSidebar fullName={user?.fullName ?? ''} email={user?.email} companyId={user?.companyId ?? ''} companyName={user?.companyName ?? ''} workspaces={user?.workspaces ?? []} onLogout={() => void logout()} />
       <main className="main-content">
         <header className="topbar"><div className="breadcrumb"><Link href="/">Painel</Link><span>/</span>Contas</div><div className="topbar-status"><span className="security-dot" />Visão financeira atualizada</div></header>
-        <section className="page-heading"><div><p className="eyebrow">CONTROLE DE PAGAMENTOS E RECEBIMENTOS</p><h1>Contas</h1><p className="muted">Acompanhe vencimentos e mantenha o caixa da empresa em dia.</p></div><Link className="button button-primary" href="/?novo=1"><span>＋</span>Novo lançamento</Link></section>
+        <section className="page-heading"><div><p className="eyebrow">CONTROLE DE PAGAMENTOS E RECEBIMENTOS</p><h1>Contas</h1><p className="muted">Acompanhe vencimentos e mantenha suas finanças em dia.</p></div><Link className="button button-primary" href="/?novo=1"><span>＋</span>Novo lançamento</Link></section>
         {error && <div className="alert alert-error" role="alert">{error}</div>}
         <section className="panel account-period-bar"><div><span className="period-calendar">▦</span><div><strong>Período de acompanhamento</strong><small>Filtre contas pelo mês de vencimento</small></div></div><label className="field-label" htmlFor="accounts-month">Mês<input className="input-control" id="accounts-month" type="month" value={month} onChange={(event) => setMonth(event.target.value)} /></label></section>
         <section className="metrics-grid account-metrics" aria-label="Resumo das contas">

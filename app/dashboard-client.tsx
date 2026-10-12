@@ -17,7 +17,7 @@ type Transaction = {
   costCenter: string;
 };
 
-type Workspace = { id: string; name: string; role: string };
+type Workspace = { id: string; name: string; role: string; workspaceType: string };
 type User = {
   id: string;
   fullName: string;

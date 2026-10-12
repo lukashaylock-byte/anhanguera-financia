@@ -6,6 +6,7 @@ export async function PATCH(request: Request) {
   try {
     const user = await getAuthenticatedUser();
     if (!user) return NextResponse.json({ error: 'Sessão expirada.' }, { status: 401 });
+    if (user.workspaceType !== 'EMPRESA') return NextResponse.json({ error: 'Esta configuração está disponível apenas em espaços empresariais.' }, { status: 403 });
     if (user.role !== 'ADMINISTRADOR') return NextResponse.json({ error: 'Somente administradores podem alterar os dados da empresa.' }, { status: 403 });
 
     let input: unknown;

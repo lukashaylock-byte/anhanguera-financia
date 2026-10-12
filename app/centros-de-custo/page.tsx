@@ -17,7 +17,7 @@ type Transaction = {
   costCenter: string;
 };
 
-type Workspace = { id: string; name: string; role: string };
+type Workspace = { id: string; name: string; role: string; workspaceType: string };
 type User = { fullName: string; email: string; companyId: string; companyName: string; workspaces: Workspace[] };
 type Group = { name: string; amount: number; count: number; share: number };
 
@@ -112,7 +112,7 @@ export default function CostCentersPage() {
       <AppSidebar fullName={user?.fullName ?? ''} email={user?.email} companyId={user?.companyId ?? ''} companyName={user?.companyName ?? ''} workspaces={user?.workspaces ?? []} onLogout={() => void logout()} />
       <main className="main-content">
         <header className="topbar"><div className="breadcrumb"><Link href="/">Painel</Link><span>/</span>Centros de custo</div><div className="topbar-status"><span className="security-dot" />Análise de despesas pagas</div></header>
-        <section className="page-heading"><div><p className="eyebrow">CUSTOS POR ÁREA, PROJETO OU FILIAL</p><h1>Centros de custo</h1><p className="muted">Entenda onde a empresa concentra suas despesas.</p></div><Link className="button button-secondary" href="/relatorios">Abrir relatórios completos <span>→</span></Link></section>
+        <section className="page-heading"><div><p className="eyebrow">CUSTOS POR ÁREA, PROJETO OU FILIAL</p><h1>Centros de custo</h1><p className="muted">Entenda como suas despesas estão distribuídas.</p></div><Link className="button button-secondary" href="/relatorios">Abrir relatórios completos <span>→</span></Link></section>
         {error && <div className="alert alert-error" role="alert">{error}</div>}
         <section className="panel account-period-bar"><div><span className="period-calendar">▦</span><div><strong>Análise mensal</strong><small>Considera despesas pagas no mês selecionado</small></div></div><label className="field-label" htmlFor="cost-month">Mês<input className="input-control" id="cost-month" type="month" value={month} onChange={(event) => setMonth(event.target.value)} /></label></section>
         <section className="metrics-grid account-metrics cost-metrics">
@@ -141,7 +141,7 @@ export default function CostCentersPage() {
             {!selectedRows.length && <tr><td colSpan={5}><div className="empty-state"><strong>Nenhum lançamento para esta seleção</strong><p>Escolha outro centro ou mês para consultar despesas.</p></div></td></tr>}
           </tbody></table></div>
         </section>
-        <footer className="app-footer">Anhanguera Financia <span>•</span> Visão clara dos gastos da empresa.</footer>
+        <footer className="app-footer">Anhanguera Financia <span>•</span> Visão clara dos seus gastos.</footer>
       </main>
     </div>
   );

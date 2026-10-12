@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
-type Workspace = { id: string; name: string; role: string };
+type Workspace = { id: string; name: string; role: string; workspaceType: string };
 type AppSidebarProps = {
   fullName: string;
   email?: string;
@@ -44,10 +44,10 @@ export default function AppSidebar({ fullName, email, companyId, companyName, wo
         body: JSON.stringify({ companyId: nextCompanyId }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Não foi possível trocar de empresa.');
+      if (!response.ok) throw new Error(data.error || 'Não foi possível trocar de espaço.');
       window.location.assign(pathname);
     } catch (error) {
-      setSwitchError(error instanceof Error ? error.message : 'Erro ao trocar de empresa.');
+      setSwitchError(error instanceof Error ? error.message : 'Erro ao trocar de espaço.');
     } finally {
       setSwitching(false);
     }
@@ -59,9 +59,9 @@ export default function AppSidebar({ fullName, email, companyId, companyName, wo
         <span className="brand-mark">A</span>
         <span><span className="brand-name">Anhanguera</span><span className="brand-light">Financia</span></span>
       </Link>
-      <label className="workspace-chip"><span className="workspace-icon">▦</span><span className="workspace-select-wrap"><strong>Empresa ativa</strong>
+      <label className="workspace-chip"><span className="workspace-icon">▦</span><span className="workspace-select-wrap"><strong>{workspaces.find((workspace) => workspace.id === companyId)?.workspaceType === 'PESSOAL' ? 'Espaço pessoal' : 'Empresa ativa'}</strong>
         {workspaces.length > 1
-          ? <select aria-label="Trocar empresa" className="workspace-select" value={companyId} disabled={switching} onChange={(event) => void switchWorkspace(event.target.value)}>{workspaces.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.name}</option>)}</select>
+          ? <select aria-label="Trocar espaço financeiro" className="workspace-select" value={companyId} disabled={switching} onChange={(event) => void switchWorkspace(event.target.value)}>{workspaces.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.name} · {workspace.workspaceType === 'PESSOAL' ? 'Pessoal' : 'Empresa'}</option>)}</select>
           : <small title={companyName}>{companyName}</small>}
       </span>{workspaces.length > 1 && <span className="workspace-chevron">{switching ? '…' : '⌄'}</span>}</label>
       {switchError && <p className="workspace-error" role="alert">{switchError}</p>}
@@ -69,8 +69,9 @@ export default function AppSidebar({ fullName, email, companyId, companyName, wo
       <nav className="side-nav" aria-label="Navegação principal">
         {navigation.map((item) => {
           const active = pathname === item.href || (item.href !== '/' && pathname.startsWith(`${item.href}/`));
-          const isAdmin = workspaces.find((workspace) => workspace.id === companyId)?.role === 'ADMINISTRADOR';
-          if (item.href === '/empresa/equipe' && !isAdmin) return null;
+          const currentWorkspace = workspaces.find((workspace) => workspace.id === companyId);
+          const isAdmin = currentWorkspace?.role === 'ADMINISTRADOR';
+          if (item.href === '/empresa/equipe' && (!isAdmin || currentWorkspace?.workspaceType !== 'EMPRESA')) return null;
           return (
             <Link key={item.href} href={item.href} className={`nav-link${active ? ' active' : ''}`} aria-current={active ? 'page' : undefined}>
               <span className="nav-icon">{item.icon}</span>{item.label}

@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { readUserPersonalData } from '@/lib/personal-data.mjs';
 
 export const SESSION_COOKIE = 'meu-financeiro-session';
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
@@ -74,28 +75,39 @@ export async function getAuthenticatedUser() {
     select: {
       id: true,
       fullName: true,
+      fullNameEncrypted: true,
       email: true,
+      emailEncrypted: true,
+      emailLookupHash: true,
+      cpf: true,
+      cpfEncrypted: true,
+      cpfLookupHash: true,
+      birthDate: true,
+      birthDateEncrypted: true,
       memberships: {
         select: {
           role: true,
-          company: { select: { id: true, name: true } },
+          company: { select: { id: true, name: true, workspaceType: true } },
         },
         orderBy: { createdAt: 'asc' },
       },
     },
   });
   if (!user || !user.memberships.length) return null;
+  const personalData = readUserPersonalData(user);
   const membership = user.memberships.find((item) => item.company.id === session.companyId) ?? user.memberships[0];
   return {
     id: user.id,
-    fullName: user.fullName,
-    email: user.email,
+    fullName: personalData.fullName,
+    email: personalData.email,
     companyId: membership.company.id,
     companyName: membership.company.name,
+    workspaceType: membership.company.workspaceType,
     role: membership.role,
     workspaces: user.memberships.map((item) => ({
       id: item.company.id,
       name: item.company.name,
+      workspaceType: item.company.workspaceType,
       role: item.role,
     })),
   };

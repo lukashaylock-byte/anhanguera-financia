@@ -7,7 +7,7 @@ import Link from 'next/link';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ companyName: '', fullName: '', email: '', password: '', cpf: '', birthDate: '' });
+  const [form, setForm] = useState({ workspaceType: 'EMPRESA', companyName: '', fullName: '', email: '', password: '', cpf: '', birthDate: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -45,9 +45,9 @@ export default function RegisterPage() {
         <Link href="/" className="brand auth-brand"><span className="brand-mark">A</span><span><span className="brand-name">Anhanguera</span><span className="brand-light">Financia</span></span></Link>
         <div className="story-content">
           <div className="story-orbit"><span>+</span><i /><i /><i /></div>
-          <p className="eyebrow">UM BOM COMEÇO PARA SUA EMPRESA</p>
-          <h1>Organize o caixa.<br />Abra espaço para crescer.</h1>
-          <p>Crie seu espaço financeiro e reúna contas, vencimentos e custos em uma visão simples para o dia a dia.</p>
+          <p className="eyebrow">FINANÇAS PARA A VIDA E OS NEGÓCIOS</p>
+          <h1>Organize seu dinheiro.<br />Planeje o que vem pela frente.</h1>
+          <p>Reúna contas, vencimentos e custos em uma visão simples para cuidar das finanças pessoais ou da empresa.</p>
           <div className="auth-feature-list">
             <div><span>↗</span><p><strong>Veja o caixa com clareza</strong><small>Separe valores realizados e previstos.</small></p></div>
             <div><span>▣</span><p><strong>Organize os vencimentos</strong><small>Planeje pagamentos e recebimentos.</small></p></div>
@@ -59,11 +59,12 @@ export default function RegisterPage() {
       <section className="auth-main register-main">
         <div className="auth-card register-card">
           <p className="eyebrow">SEU PRÓXIMO PASSO</p>
-          <h2>Comece com mais clareza.</h2>
-          <p className="auth-intro">Crie seu acesso e organize as finanças da empresa em um só lugar.</p>
+          <h2>Finanças mais claras para você.</h2>
+          <p className="auth-intro">Escolha seu tipo de espaço e organize as finanças pessoais ou da sua empresa.</p>
           {error && <div className="alert alert-error" role="alert">{error}</div>}
           <form className="auth-form register-form" onSubmit={handleSubmit}>
-            <label className="field-label" htmlFor="companyName">Nome da empresa<input autoComplete="organization" className="input-control" id="companyName" type="text" maxLength={120} required value={form.companyName} onChange={(event) => setForm({ ...form, companyName: event.target.value })} placeholder="Ex.: Empresa Anhanguera" /></label>
+            <label className="field-label" htmlFor="workspaceType">Tipo de cadastro<select className="input-control" id="workspaceType" value={form.workspaceType} onChange={(event) => setForm({ ...form, workspaceType: event.target.value })}><option value="EMPRESA">Empresa</option><option value="PESSOAL">Pessoa física (uso pessoal)</option></select></label>
+            {form.workspaceType === 'EMPRESA' && <label className="field-label" htmlFor="companyName">Nome da empresa<input autoComplete="organization" className="input-control" id="companyName" type="text" maxLength={120} required value={form.companyName} onChange={(event) => setForm({ ...form, companyName: event.target.value })} placeholder="Ex.: Empresa Anhanguera" /></label>}
             <label className="field-label" htmlFor="fullName">Nome completo<input autoComplete="name" className="input-control" id="fullName" type="text" maxLength={120} required value={form.fullName} onChange={(event) => setForm({ ...form, fullName: event.target.value })} placeholder="Como podemos chamar você?" /></label>
             <label className="field-label" htmlFor="registerEmail">E-mail<input autoComplete="email" className="input-control" id="registerEmail" type="email" required value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} placeholder="voce@exemplo.com" /></label>
             <div className="form-row">

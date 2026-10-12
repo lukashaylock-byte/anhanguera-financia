@@ -5,11 +5,10 @@ import { useRouter } from 'next/navigation';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import AppSidebar from '../../components/app-sidebar';
 
-type Workspace = { id: string; name: string; role: string };
+type Workspace = { id: string; name: string; role: string; workspaceType: string };
 type User = { id: string; fullName: string; email: string; companyId: string; companyName: string; role: string; workspaces: Workspace[] };
 type Member = { id: string; role: string; createdAt: string; user: { id: string; fullName: string; email: string } };
-type Invitation = { id: string; email: string; role: string; expiresAt: string; createdAt: string };
-type TeamData = { company: { id: string; name: string }; memberships: Member[]; invitations: Invitation[] };
+type TeamData = { company: { id: string; name: string }; memberships: Member[] };
 
 const roleNames: Record<string, string> = {
   ADMINISTRADOR: 'Administrador',
@@ -21,17 +20,14 @@ const roleDescriptions: Record<string, string> = {
   FINANCEIRO: 'Cria e atualiza lançamentos, contas e análises financeiras.',
   LEITURA: 'Consulta o painel, contas e relatórios sem alterar dados.',
 };
-const dateLabel = (value: string) => new Date(value).toLocaleDateString('pt-BR');
-
 export default function TeamPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [team, setTeam] = useState<TeamData | null>(null);
   const [companyName, setCompanyName] = useState('');
-  const [email, setEmail] = useState('');
-  const [role, setRole] = useState('FINANCEIRO');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [finalizingEncryption, setFinalizingEncryption] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
@@ -101,29 +97,6 @@ export default function TeamPage() {
     }
   };
 
-  const inviteMember = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setSaving(true);
-    setError('');
-    setNotice('');
-    try {
-      const response = await fetch('/api/team/invitations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, role }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Não foi possível enviar o convite.');
-      setEmail('');
-      setNotice(`Convite enviado para ${data.invitation.email}.`);
-      await refreshTeam();
-    } catch (inviteError) {
-      setError(inviteError instanceof Error ? inviteError.message : 'Erro ao enviar convite.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const memberRequest = async (member: Member, action: 'role' | 'remove', nextRole?: string) => {
     const message = action === 'remove'
       ? `Remover ${member.user.fullName} do espaço financeiro desta empresa?`
@@ -146,17 +119,21 @@ export default function TeamPage() {
     }
   };
 
-  const cancelInvitation = async (invitation: Invitation) => {
-    if (!window.confirm(`Cancelar o convite enviado para ${invitation.email}?`)) return;
+  const finalizeEncryption = async () => {
+    const confirmed = window.confirm('Isso criptografa nome, e-mail, CPF e nascimento de todas as contas do sistema e remove as cópias em texto puro. Confirme que a nova implantação já está ativa e que há um backup restaurável.');
+    if (!confirmed) return;
+    setFinalizingEncryption(true);
     setError('');
+    setNotice('');
     try {
-      const response = await fetch(`/api/team/invitations/${encodeURIComponent(invitation.id)}`, { method: 'DELETE' });
+      const response = await fetch('/api/company/encryption/finalize', { method: 'POST' });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Não foi possível cancelar o convite.');
-      setNotice('Convite cancelado.');
-      await refreshTeam();
-    } catch (cancelError) {
-      setError(cancelError instanceof Error ? cancelError.message : 'Erro ao cancelar o convite.');
+      if (!response.ok) throw new Error(data.error || 'Não foi possível finalizar a criptografia.');
+      setNotice(data.message);
+    } catch (encryptionError) {
+      setError(encryptionError instanceof Error ? encryptionError.message : 'Erro ao finalizar a criptografia.');
+    } finally {
+      setFinalizingEncryption(false);
     }
   };
 
@@ -173,24 +150,19 @@ export default function TeamPage() {
       <AppSidebar fullName={user?.fullName ?? ''} email={user?.email} companyId={user?.companyId ?? ''} companyName={user?.companyName ?? ''} workspaces={user?.workspaces ?? []} onLogout={() => void logout()} />
       <main className="main-content">
         <header className="topbar"><div className="breadcrumb"><Link href="/">Painel</Link><span>/</span>Empresa e equipe</div><div className="topbar-status"><span className="security-dot" />Acesso administrativo</div></header>
-        <section className="page-heading"><div><p className="eyebrow">CONFIGURAÇÕES DO ESPAÇO</p><h1>Empresa e equipe</h1><p className="muted">Defina o nome do espaço e controle quem acessa os dados financeiros.</p></div></section>
+        <section className="page-heading"><div><p className="eyebrow">CONFIGURAÇÕES DO ESPAÇO</p><h1>Empresa e equipe</h1><p className="muted">Defina o nome do espaço e gerencie os acessos existentes aos dados financeiros.</p></div></section>
         {error && <div className="alert alert-error" role="alert">{error}<button onClick={() => setError('')} aria-label="Fechar aviso">×</button></div>}
         {notice && <div className="team-notice" role="status">{notice}<button onClick={() => setNotice('')} aria-label="Fechar aviso">×</button></div>}
         <section className="team-settings-grid">
           <article className="panel company-settings-panel"><div className="panel-heading"><div><h2>Dados da empresa</h2><p className="muted">Nome mostrado na navegação da equipe.</p></div><span className="metric-icon green">▦</span></div>
             <form className="team-company-form" onSubmit={updateCompanyName}><label className="field-label" htmlFor="company-name">Nome da empresa<input className="input-control" id="company-name" maxLength={120} required value={companyName} onChange={(event) => setCompanyName(event.target.value)} /></label><button className="button button-primary" type="submit" disabled={saving}>{saving ? 'Salvando...' : 'Salvar alterações'}</button></form>
           </article>
-          <article className="panel team-invite-panel"><div className="panel-heading"><div><h2>Convidar alguém</h2><p className="muted">O convite será enviado por e-mail e expira em 7 dias.</p></div><span className="metric-icon blue">＋</span></div>
-            <form className="team-invite-form" onSubmit={inviteMember}><label className="field-label" htmlFor="invite-team-email">E-mail da pessoa<input className="input-control" id="invite-team-email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="colega@empresa.com.br" /></label><label className="field-label" htmlFor="invite-team-role">Perfil de acesso<select className="input-control" id="invite-team-role" value={role} onChange={(event) => setRole(event.target.value)}><option value="FINANCEIRO">Financeiro</option><option value="LEITURA">Somente leitura</option><option value="ADMINISTRADOR">Administrador</option></select></label><p className="role-description">{roleDescriptions[role]}</p><button className="button button-primary" type="submit" disabled={saving}>{saving ? 'Enviando convite...' : 'Enviar convite por e-mail'}<span>→</span></button></form>
-          </article>
         </section>
         <section className="panel team-members-panel"><div className="panel-heading"><div><h2>Membros da empresa</h2><p className="muted">{team?.memberships.length ?? 0} pessoa(s) com acesso ao espaço financeiro.</p></div><span className="team-count">{team?.memberships.length ?? 0} membros</span></div>
           <div className="team-member-list">{team?.memberships.map((member) => <article className="team-member-row" key={member.id}><span className="avatar">{member.user.fullName.slice(0, 1).toUpperCase()}</span><div className="team-member-identity"><strong>{member.user.fullName}</strong><small>{member.user.email}</small></div><span className={`role-badge role-${member.role.toLowerCase()}`}>{roleNames[member.role] ?? member.role}</span>{member.user.id !== user?.id ? <div className="team-member-actions"><label className="sr-only" htmlFor={`role-${member.id}`}>Perfil de {member.user.fullName}</label><select id={`role-${member.id}`} className="select-control" value={member.role} onChange={(event) => void memberRequest(member, 'role', event.target.value)}><option value="ADMINISTRADOR">Administrador</option><option value="FINANCEIRO">Financeiro</option><option value="LEITURA">Somente leitura</option></select><button className="button button-secondary remove-member-button" onClick={() => void memberRequest(member, 'remove')}>Remover</button></div> : <span className="current-member-label">Você</span>}</article>)}</div>
         </section>
-        <section className="panel team-members-panel pending-invites-panel"><div className="panel-heading"><div><h2>Convites pendentes</h2><p className="muted">A pessoa ainda precisa aceitar para entrar na empresa.</p></div></div>
-          {team?.invitations.length ? <div className="team-member-list">{team.invitations.map((invitation) => <article className="team-member-row" key={invitation.id}><span className="invite-avatar">✉</span><div className="team-member-identity"><strong>{invitation.email}</strong><small>Enviado em {dateLabel(invitation.createdAt)} · expira em {dateLabel(invitation.expiresAt)}</small></div><span className={`role-badge role-${invitation.role.toLowerCase()}`}>{roleNames[invitation.role] ?? invitation.role}</span><button className="button button-secondary remove-member-button" onClick={() => void cancelInvitation(invitation)}>Cancelar</button></article>)}</div> : <div className="team-empty-state"><span>✉</span><p>Não há convites pendentes para esta empresa.</p></div>}
-        </section>
         <section className="panel permissions-panel"><div className="panel-heading"><div><h2>O que cada perfil pode fazer</h2><p className="muted">As permissões são verificadas no servidor em cada operação.</p></div></div><div className="permission-grid">{(['ADMINISTRADOR', 'FINANCEIRO', 'LEITURA'] as const).map((item) => <article key={item}><span className={`role-badge role-${item.toLowerCase()}`}>{roleNames[item]}</span><p>{roleDescriptions[item]}</p></article>)}</div></section>
+        <section className="panel permissions-panel"><div className="panel-heading"><div><h2>Criptografia de dados pessoais</h2><p className="muted">AES-256-GCM protege campos pessoais; hashes HMAC permitem localizar contas sem texto puro.</p></div><span className="metric-icon green">◈</span></div><p className="role-description encryption-description">Antes de continuar, configure DATA_ENCRYPTION_KEY na Vercel, publique a migração, confirme que o novo site está ativo e tenha um backup restaurável. Guarde uma cópia segura da chave: sem ela, os dados cifrados não podem ser recuperados.</p><button className="button button-secondary" type="button" disabled={finalizingEncryption} onClick={() => void finalizeEncryption()}>{finalizingEncryption ? 'Criptografando dados...' : 'Finalizar criptografia e remover cópias em texto puro'}</button></section>
         <footer className="app-footer">Anhanguera Financia <span>•</span> Gestão de acessos da empresa.</footer>
       </main>
     </div>

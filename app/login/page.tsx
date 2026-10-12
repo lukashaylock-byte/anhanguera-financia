@@ -52,7 +52,7 @@ export default function LoginPage() {
           <div className="story-orbit"><span>R$</span><i /><i /><i /></div>
           <p className="eyebrow">GESTÃO FINANCEIRA QUE FAZ SENTIDO</p>
           <h1>Mais clareza.<br />Melhores decisões.</h1>
-          <p>Receitas, despesas e compromissos da empresa em um só lugar. Acompanhe o caixa e siga em frente com confiança.</p>
+          <p>Receitas, despesas e compromissos em um só lugar. Acompanhe o caixa pessoal ou da empresa e siga em frente com confiança.</p>
           <div className="auth-feature-list">
             <div><span>↗</span><p><strong>Visão clara do caixa</strong><small>Saiba o que entrou e o que está previsto.</small></p></div>
             <div><span>▣</span><p><strong>Vencimentos sob controle</strong><small>Organize contas a pagar e a receber.</small></p></div>
@@ -65,7 +65,7 @@ export default function LoginPage() {
         <div className="auth-card">
           <p className="eyebrow">SEU ESPAÇO FINANCEIRO</p>
           <h2>Bom ter você de volta.</h2>
-          <p className="auth-intro">Acesse o painel da sua empresa e tenha os números importantes sempre à mão.</p>
+          <p className="auth-intro">Acesse seu espaço financeiro e tenha os números importantes sempre à mão.</p>
           {error && <div className="alert alert-error" role="alert">{error}</div>}
           <form className="auth-form" onSubmit={handleSubmit}>
             <label className="field-label" htmlFor="email">E-mail<input autoComplete="email" className="input-control" id="email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="voce@exemplo.com" /></label>

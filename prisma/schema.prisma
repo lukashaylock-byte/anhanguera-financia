@@ -7,25 +7,32 @@ generator client {
 }
 
 model User {
-  id           String        @id @default(uuid())
-  fullName     String
-  email        String        @unique
-  password     String
-  cpf          String        @unique
-  birthDate    DateTime
-  createdAt    DateTime      @default(now())
-  memberships  Membership[]
-  transactions Transaction[]
-  invitations  Invitation[]  @relation("InvitationCreator")
+  id                 String        @id @default(uuid())
+  fullName           String?
+  fullNameEncrypted  String?
+  email              String?       @unique
+  emailEncrypted     String?
+  emailLookupHash    String?       @unique
+  password           String
+  cpf                String?       @unique
+  cpfEncrypted       String?
+  cpfLookupHash      String?       @unique
+  birthDate          DateTime?
+  birthDateEncrypted String?
+  createdAt          DateTime      @default(now())
+  memberships        Membership[]
+  transactions       Transaction[]
+  invitations        Invitation[]  @relation("InvitationCreator")
 }
 
 model Company {
-  id           String        @id @default(uuid())
-  name         String
-  createdAt    DateTime      @default(now())
-  memberships  Membership[]
-  transactions Transaction[]
-  invitations  Invitation[]
+  id            String        @id @default(uuid())
+  name          String
+  workspaceType String        @default("EMPRESA")
+  createdAt     DateTime      @default(now())
+  memberships   Membership[]
+  transactions  Transaction[]
+  invitations   Invitation[]
 }
 
 model Membership {
@@ -42,19 +49,21 @@ model Membership {
 }
 
 model Invitation {
-  id          String    @id @default(uuid())
-  companyId   String
-  invitedById String
-  email       String
-  role        String
-  tokenHash   String    @unique
-  expiresAt   DateTime
-  acceptedAt  DateTime?
-  createdAt   DateTime  @default(now())
-  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  invitedBy   User      @relation("InvitationCreator", fields: [invitedById], references: [id], onDelete: Cascade)
+  id              String    @id @default(uuid())
+  companyId       String
+  invitedById     String
+  email           String?
+  emailEncrypted  String?
+  emailLookupHash String?
+  role            String
+  tokenHash       String    @unique
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invitedBy       User      @relation("InvitationCreator", fields: [invitedById], references: [id], onDelete: Cascade)
 
-  @@unique([companyId, email])
+  @@unique([companyId, emailLookupHash])
   @@index([companyId, acceptedAt])
 }
 
@@ -75,4 +84,13 @@ model Transaction {
   createdAt   DateTime  @default(now())
 
   @@index([companyId, date])
+}
+
+model LoginRateLimit {
+  id              String   @id
+  attempts        Int      @default(1)
+  windowStartedAt DateTime @default(now())
+  expiresAt       DateTime
+
+  @@index([expiresAt])
 }

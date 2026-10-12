@@ -16,7 +16,7 @@ type Transaction = {
   status: 'PENDENTE' | 'PAGO';
   costCenter: string;
 };
-type Workspace = { id: string; name: string; role: string };
+type Workspace = { id: string; name: string; role: string; workspaceType: string };
 type User = { fullName: string; email: string; companyId: string; companyName: string; workspaces: Workspace[] };
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const currentMonth = () => {
