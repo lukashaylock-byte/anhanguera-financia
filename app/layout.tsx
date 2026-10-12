@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Anhanguera Financia | Gestão financeira simples",
-  description: "Controle contas a pagar e receber, fluxo de caixa e custos da sua empresa com o Anhanguera Financia.",
+  description: "Clareza financeira para crescer com confiança. Controle contas a pagar e receber, fluxo de caixa e custos da sua empresa.",
 };
 
 export default function RootLayout({

@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -33,25 +34,33 @@ export default function RegisterPage() {
   return (
     <main className="auth-layout">
       <section className="auth-story">
+        <Image
+          src="/images/finance-team.jpg"
+          alt="Equipe trabalhando em conjunto em um escritório moderno"
+          fill
+          priority
+          sizes="(max-width: 760px) 100vw, 54vw"
+          className="auth-story-image"
+        />
         <Link href="/" className="brand auth-brand"><span className="brand-mark">A</span><span><span className="brand-name">Anhanguera</span><span className="brand-light">Financia</span></span></Link>
         <div className="story-content">
           <div className="story-orbit"><span>+</span><i /><i /><i /></div>
-          <p className="eyebrow">COMECE COM O PÉ DIREITO</p>
-          <h1>Uma gestão melhor<br />começa com clareza.</h1>
-          <p>Crie seu acesso e reúna contas, categorias e custos da empresa em um só lugar.</p>
+          <p className="eyebrow">UM BOM COMEÇO PARA SUA EMPRESA</p>
+          <h1>Organize o caixa.<br />Abra espaço para crescer.</h1>
+          <p>Crie seu espaço financeiro e reúna contas, vencimentos e custos em uma visão simples para o dia a dia.</p>
           <div className="auth-feature-list">
-            <div><span>↗</span><p><strong>Veja o caixa com clareza</strong><small>Separe valores realizados e contas previstas.</small></p></div>
-            <div><span>▣</span><p><strong>Organize vencimentos</strong><small>Saiba o que precisa ser pago ou recebido.</small></p></div>
-            <div><span>▤</span><p><strong>Entenda os custos</strong><small>Agrupe despesas por área e categoria.</small></p></div>
+            <div><span>↗</span><p><strong>Veja o caixa com clareza</strong><small>Separe valores realizados e previstos.</small></p></div>
+            <div><span>▣</span><p><strong>Organize os vencimentos</strong><small>Planeje pagamentos e recebimentos.</small></p></div>
+            <div><span>▤</span><p><strong>Entenda seus custos</strong><small>Acompanhe despesas por área e projeto.</small></p></div>
           </div>
         </div>
-        <small className="story-footer">Simples de usar. Feito para acompanhar você.</small>
+        <small className="story-footer">Clareza financeira para crescer com confiança.</small>
       </section>
       <section className="auth-main register-main">
         <div className="auth-card register-card">
-          <p className="eyebrow">ACESSO À GESTÃO FINANCEIRA</p>
-          <h2>Vamos organizar sua empresa.</h2>
-          <p className="auth-intro">Crie seu acesso para começar a acompanhar as finanças do negócio.</p>
+          <p className="eyebrow">SEU PRÓXIMO PASSO</p>
+          <h2>Comece com mais clareza.</h2>
+          <p className="auth-intro">Crie seu acesso e organize as finanças da empresa em um só lugar.</p>
           {error && <div className="alert alert-error" role="alert">{error}</div>}
           <form className="auth-form register-form" onSubmit={handleSubmit}>
             <label className="field-label" htmlFor="companyName">Nome da empresa<input autoComplete="organization" className="input-control" id="companyName" type="text" maxLength={120} required value={form.companyName} onChange={(event) => setForm({ ...form, companyName: event.target.value })} placeholder="Ex.: Empresa Anhanguera" /></label>

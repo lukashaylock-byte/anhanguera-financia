@@ -436,6 +436,7 @@ a { color: inherit; text-decoration: none; }
 .workspace-select { width: 100%; margin-top: 4px; border: 0; outline: 0; color: #c6d6cb; background: transparent; font-size: 10px; }
 .workspace-select option { color: #173128; background: #fff; }
 .workspace-error { margin: 4px 6px; color: #ffd3d3; font-size: 10px; }
+.encryption-description { max-width: 780px; margin: 15px 0; line-height: 1.7; }
 
 @media (max-width: 1100px) {
   .cost-analysis-grid { grid-template-columns: 1fr; }
@@ -484,4 +485,170 @@ a { color: inherit; text-decoration: none; }
   .page-heading { flex-direction: column; }
   .account-chip strong { max-width: 130px; }
   .metrics-grid { grid-template-columns: 1fr 1fr; }
+}
+
+:root {
+  --background: #f4f6f4;
+  --foreground: #172d35;
+  --muted: #718087;
+  --line: #e1e8e7;
+  --purple: #087b78;
+  --green: #12816e;
+}
+
+.sidebar {
+  background: linear-gradient(180deg, #122831 0%, #18343a 62%, #122831 100%);
+  border-right-color: #29434a;
+}
+.brand-mark {
+  background: linear-gradient(145deg, #1aa397, #087b78);
+}
+.brand-light { color: #7bd3c1; }
+.nav-caption { color: #9bb0b4; }
+.nav-link { color: #c2d0d1; }
+.nav-link:hover { color: #fff; background: #ffffff12; }
+.nav-link.active {
+  color: #f7fffd;
+  background: linear-gradient(100deg, #087b783b, #087b7817);
+  box-shadow: inset 3px 0 #d8b66b;
+}
+.nav-link.active .nav-icon { color: #e7c679; }
+.security-note { border-color: #ffffff18; background: #ffffff0a; }
+.security-dot { background: #4dc4a3; box-shadow: 0 0 0 4px #4dc4a326; }
+.sidebar-profile { border-top-color: #ffffff20; }
+.button-primary {
+  background: linear-gradient(110deg, #087b78, #119589);
+  box-shadow: 0 6px 14px #087b7826;
+}
+.button-primary:hover { background: linear-gradient(110deg, #066966, #087b78); }
+.avatar { background: #dff2ee; color: #087b78; }
+.page-heading h1, .panel-heading h2 { color: #18343a; }
+.metric-icon.violet, .metric-icon.blue { background: #e4f1ef; color: #087b78; }
+.metric-icon.green { background: #e1f2eb; color: #12816e; }
+.legend-income, .income-bar { background: #118c81; }
+.legend-expenses, .expense-bar { background: #d2ad62; }
+.text-link, .eyebrow { color: #087b78; }
+.input-control:focus, .select-control:focus, .search-field:focus-within {
+  border-color: #49a69b;
+  box-shadow: 0 0 0 3px #087b7815;
+}
+.report-banner {
+  background:
+    radial-gradient(ellipse at 88% 15%, #d8b66b4a 0, transparent 34%),
+    linear-gradient(110deg, #15313a, #087b78);
+  box-shadow: 0 10px 24px #15313a24;
+}
+.report-banner-label { color: #e9d5a4; }
+.report-banner p { color: #e1f1ef; }
+.category-track span { background: linear-gradient(90deg, #087b78, #55b9a8); }
+.spinner { border-top-color: #087b78; }
+
+.auth-layout {
+  grid-template-columns: minmax(390px, 1.04fr) minmax(440px, .96fr);
+  background: #f6f7f3;
+}
+.auth-story {
+  isolation: isolate;
+  background: #132c35;
+}
+.auth-story-image {
+  z-index: 0;
+  object-fit: cover;
+  object-position: 55% center;
+}
+.auth-story::before {
+  z-index: 1;
+  opacity: 1;
+  background:
+    linear-gradient(90deg, #102831ed 0%, #102831cc 47%, #10283178 100%),
+    linear-gradient(0deg, #102831b8 0%, transparent 55%),
+    linear-gradient(145deg, #087b7855, transparent 48%);
+  background-size: auto;
+  mask-image: none;
+}
+.auth-story::after {
+  z-index: 1;
+  border-color: #ffffff28;
+  box-shadow: 0 0 0 55px #ffffff10, 0 0 0 110px #ffffff09;
+}
+.auth-brand .brand-mark {
+  border-color: #ffffff45;
+  background: linear-gradient(145deg, #27aa9c, #087b78);
+}
+.auth-brand .brand-light { color: #9ae0cf; }
+.story-orbit {
+  color: #efd99d;
+  border-color: #ffffff70;
+  background: #1028314a;
+  box-shadow: 0 0 50px #d8b66b25;
+  backdrop-filter: blur(8px);
+}
+.story-orbit::before, .story-orbit::after { border-color: #ffffff40; }
+.story-orbit i { background: #e3bd70; box-shadow: 0 0 13px #e3bd70; }
+.story-orbit i:nth-of-type(2) { background: #67d4bd; }
+.story-orbit i:nth-of-type(3) { background: #fff0c9; }
+.story-content .eyebrow { color: #efd99d; }
+.story-content h1 { text-wrap: balance; }
+.story-content > p:last-of-type { color: #e1eaeb; }
+.auth-feature-list > div {
+  border-color: #ffffff2a;
+  background: #10283159;
+  backdrop-filter: blur(10px);
+}
+.auth-feature-list > div > span {
+  color: #f0d594;
+  background: #ffffff17;
+}
+.auth-feature-list small { color: #d1dfe0; }
+.story-footer { color: #d5e2e1; }
+.auth-main {
+  background:
+    radial-gradient(ellipse at 96% 4%, #e4efeb 0, transparent 34%),
+    #f6f7f3;
+}
+.auth-card {
+  border-color: #e0e8e5;
+  border-radius: 22px;
+  box-shadow: 0 28px 80px #183a3214, 0 4px 18px #183a3209;
+}
+.auth-card h2 { color: #17343b; }
+.auth-intro { color: #6f7f83; }
+.auth-form .field-label { color: #334c50; }
+.auth-form .input-control {
+  border-color: #dce6e3;
+  background: #fcfdfb;
+}
+.auth-submit {
+  background: linear-gradient(110deg, #087b78, #119589);
+  box-shadow: 0 8px 20px #087b7830;
+}
+.auth-submit:hover { background: linear-gradient(110deg, #066966, #087b78); }
+.auth-switch a, .auth-security span { color: #087b78; }
+.auth-security { border-top-color: #e7edeb; }
+
+@media (max-width: 760px) {
+  .sidebar { background: #142d35; border-bottom-color: #29434a; }
+  .auth-layout { grid-template-columns: 1fr; }
+  .auth-story {
+    display: flex;
+    min-height: 390px;
+    padding: 23px clamp(22px, 6vw, 38px);
+  }
+  .story-content { margin: 20px 0 12px; padding: 0; }
+  .story-orbit { width: 58px; height: 58px; margin-bottom: 25px; font-size: 17px; }
+  .story-orbit::before { inset: -7px; }
+  .story-orbit::after { inset: -14px; }
+  .story-content h1 { max-width: 460px; font-size: clamp(34px, 8vw, 45px); }
+  .story-content > p:last-of-type { max-width: 500px; font-size: 13px; }
+  .auth-feature-list { display: none; }
+  .story-footer { font-size: 10px; }
+  .auth-main { min-height: auto; padding: 34px 22px 44px; }
+  .register-main { padding-top: 28px; padding-bottom: 36px; }
+}
+@media (max-width: 390px) {
+  .auth-story { min-height: 365px; padding-right: 21px; padding-left: 21px; }
+  .auth-brand { font-size: 14px; }
+  .story-content h1 { font-size: 34px; letter-spacing: -1.3px; }
+  .auth-main { padding-right: 16px; padding-left: 16px; }
+  .auth-card { padding: 25px 21px; }
 }
