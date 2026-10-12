@@ -18,13 +18,16 @@ model User {
 }
 
 model Transaction {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   description String
   amount      Float
   type        String
-  category    String   @default("Outros")
-  date        DateTime @default(now())
+  category    String    @default("Outros")
+  date        DateTime  @default(now())
+  dueDate     DateTime?
+  status      String    @default("PAGO")
+  costCenter  String    @default("Geral")
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
 }

@@ -110,11 +110,14 @@ a { color: inherit; text-decoration: none; }
 .type-pill { display: inline-flex; border-radius: 15px; padding: 5px 8px; font-size: 9px; font-weight: 700; }
 .type-income { color: #168c64; background: #e9f8f1; }
 .type-expense { color: #ce555f; background: #fff0f1; }
+.status-pending { color: #9b6a13; background: #fff6df; }
 .align-right { text-align: right !important; }
 .amount-cell { font-weight: 700; }
 .row-actions { display: flex; justify-content: flex-end; gap: 5px; }
 .row-actions button { width: 26px; height: 26px; border: 0; border-radius: 6px; color: #8791a0; background: transparent; font-size: 14px; }
 .row-actions button:hover { color: var(--purple); background: #f1efff; }
+.row-actions .mark-paid-button { color: #168c64; }
+.row-actions .mark-paid-button:hover { color: #116b4c; background: #e9f8f1; }
 .empty-state { display: flex; flex-direction: column; align-items: center; gap: 7px; min-height: 178px; justify-content: center; text-align: center; white-space: normal; }
 .empty-state strong { color: #3a4658; font-size: 12px; }
 .empty-state p { max-width: 320px; margin: 0 0 5px; color: #8c96a5; font-size: 10px; line-height: 1.5; }
@@ -126,7 +129,7 @@ a { color: inherit; text-decoration: none; }
 .alert-error button { border: 0; color: inherit; background: none; font-size: 18px; }
 .page-heading + .alert { margin: -9px 0 17px; }
 .modal-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 20px; background: #18223082; backdrop-filter: blur(3px); }
-.modal-card { width: min(100%, 480px); padding: 24px; background: #fff; border: 1px solid var(--line); border-radius: 15px; box-shadow: 0 22px 70px #141b2a30; }
+.modal-card { width: min(100%, 480px); max-height: calc(100vh - 40px); overflow-y: auto; padding: 24px; background: #fff; border: 1px solid var(--line); border-radius: 15px; box-shadow: 0 22px 70px #141b2a30; }
 .modal-heading { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 22px; }
 .modal-heading h2 { margin: 6px 0 0; font-size: 20px; }
 .modal-close { border: 0; color: #8490a0; background: transparent; font-size: 24px; }

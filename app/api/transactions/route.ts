@@ -3,7 +3,7 @@ import { getAuthenticatedUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 const transactionTypes = ['RECEITA', 'DESPESA'] as const;
-const allowedCategories = ['Salário', 'Vendas', 'Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Educação', 'Lazer', 'Serviços', 'Outros'];
+const transactionStatuses = ['PENDENTE', 'PAGO'] as const;
 
 function isRecord(input: unknown): input is Record<string, unknown> {
   return typeof input === 'object' && input !== null && !Array.isArray(input);
@@ -13,25 +13,29 @@ function isTransactionType(value: unknown): value is typeof transactionTypes[num
   return typeof value === 'string' && transactionTypes.includes(value as typeof transactionTypes[number]);
 }
 
-function isAllowedCategory(value: unknown): value is string {
-  return typeof value === 'string' && allowedCategories.includes(value);
+function isTransactionStatus(value: unknown): value is typeof transactionStatuses[number] {
+  return typeof value === 'string' && transactionStatuses.includes(value as typeof transactionStatuses[number]);
+}
+
+function parseDate(value: unknown): Date | null {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const parsed = new Date(`${value}T12:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value ? parsed : null;
 }
 
 function validTransaction(input: Record<string, unknown>) {
   const amount = Number(input.amount);
-  const date = typeof input.date === 'string' ? new Date(`${input.date}T12:00:00.000Z`) : new Date(Number.NaN);
-  const validDate = typeof input.date === 'string' &&
-    /^\d{4}-\d{2}-\d{2}$/.test(input.date) &&
-    !Number.isNaN(date.getTime()) &&
-    date.toISOString().slice(0, 10) === input.date;
-
+  const date = parseDate(input.date);
+  const dueDate = parseDate(input.dueDate ?? input.date);
   return {
     description: typeof input.description === 'string' ? input.description.trim() : '',
     amount,
     type: input.type,
-    category: input.category,
+    category: typeof input.category === 'string' ? input.category.trim() : '',
     date,
-    validDate,
+    dueDate,
+    status: input.status ?? 'PAGO',
+    costCenter: typeof input.costCenter === 'string' ? input.costCenter.trim() : 'Geral',
   };
 }
 
@@ -43,7 +47,7 @@ export async function GET() {
     const transactions = await prisma.transaction.findMany({
       where: { userId: user.id },
       orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
-      select: { id: true, description: true, amount: true, type: true, category: true, date: true },
+      select: { id: true, description: true, amount: true, type: true, category: true, date: true, dueDate: true, status: true, costCenter: true },
     });
     return NextResponse.json({ transactions });
   } catch (error) {
@@ -70,8 +74,10 @@ export async function POST(request: Request) {
       !values.description || values.description.length > 120 ||
       !Number.isFinite(values.amount) || values.amount <= 0 || values.amount > 999999999 ||
       !isTransactionType(values.type) ||
-      !isAllowedCategory(values.category) || !values.validDate
-    ) return NextResponse.json({ error: 'Confira a descrição, o valor, a categoria e a data.' }, { status: 400 });
+      !values.category || values.category.length > 60 ||
+      !values.date || !values.dueDate || !isTransactionStatus(values.status) ||
+      !values.costCenter || values.costCenter.length > 80
+    ) return NextResponse.json({ error: 'Confira a descrição, o valor, a categoria, o centro de custo e as datas.' }, { status: 400 });
 
     const transaction = await prisma.transaction.create({
       data: {
@@ -81,8 +87,11 @@ export async function POST(request: Request) {
         type: values.type,
         category: values.category,
         date: values.date,
+        dueDate: values.dueDate,
+        status: values.status,
+        costCenter: values.costCenter,
       },
-      select: { id: true, description: true, amount: true, type: true, category: true, date: true },
+      select: { id: true, description: true, amount: true, type: true, category: true, date: true, dueDate: true, status: true, costCenter: true },
     });
     return NextResponse.json({ transaction }, { status: 201 });
   } catch (error) {
@@ -109,8 +118,10 @@ export async function PATCH(request: Request) {
       !values.description || values.description.length > 120 ||
       !Number.isFinite(values.amount) || values.amount <= 0 || values.amount > 999999999 ||
       !isTransactionType(values.type) ||
-      !isAllowedCategory(values.category) || !values.validDate
-    ) return NextResponse.json({ error: 'Confira a descrição, o valor, a categoria e a data.' }, { status: 400 });
+      !values.category || values.category.length > 60 ||
+      !values.date || !values.dueDate || !isTransactionStatus(values.status) ||
+      !values.costCenter || values.costCenter.length > 80
+    ) return NextResponse.json({ error: 'Confira a descrição, o valor, a categoria, o centro de custo e as datas.' }, { status: 400 });
 
     const result = await prisma.transaction.updateMany({
       where: { id: input.id, userId: user.id },
@@ -120,6 +131,9 @@ export async function PATCH(request: Request) {
         type: values.type,
         category: values.category,
         date: values.date,
+        dueDate: values.dueDate,
+        status: values.status,
+        costCenter: values.costCenter,
       },
     });
     if (!result.count) return NextResponse.json({ error: 'Lançamento não encontrado.' }, { status: 404 });

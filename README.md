@@ -44,7 +44,9 @@ Aplicação de gestão financeira com contas individuais, lançamentos persistid
 ## Funcionalidades
 
 - Cadastro e login com sessão em cookie `HttpOnly`.
-- Lançamentos de receitas e despesas, com categoria, data, edição e exclusão.
-- Painel com resumo mensal, busca, filtros e exportação CSV.
-- Relatório mensal com margem, saldo e despesas por categoria.
+- Lançamentos de receitas e despesas com categorias livres, vencimentos, situação e centros de custo.
+- Contas pendentes a pagar e a receber, com baixa rápida após pagamento ou recebimento.
+- Painel de fluxo de caixa mensal com valores realizados e saldo projetado.
+- Busca, filtros, edição, exclusão e exportação CSV com vencimento, situação e centro de custo.
+- Relatórios mensais com despesas por categoria e por centro de custo.
 - Dados de cada conta filtrados no servidor pela sessão autenticada.

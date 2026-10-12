@@ -11,11 +11,13 @@ type Transaction = {
   type: 'RECEITA' | 'DESPESA';
   category: string;
   date: string;
+  dueDate: string;
+  status: 'PENDENTE' | 'PAGO';
+  costCenter: string;
 };
 
 type User = { id: string; fullName: string; email: string };
 
-const categories = ['Salário', 'Vendas', 'Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Educação', 'Lazer', 'Serviços', 'Outros'];
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const today = () => {
   const date = new Date();
@@ -37,14 +39,19 @@ export default function DashboardClient({
   const [month, setMonth] = useState(currentMonth());
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('TODOS');
+  const [statusFilter, setStatusFilter] = useState('TODOS');
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [type, setType] = useState<'RECEITA' | 'DESPESA'>('DESPESA');
-  const [category, setCategory] = useState(categories[0]);
+  const [category, setCategory] = useState('Outros');
   const [date, setDate] = useState(today());
+  const [dueDate, setDueDate] = useState(today());
+  const [status, setStatus] = useState<'PENDENTE' | 'PAGO'>('PENDENTE');
+  const [costCenter, setCostCenter] = useState('Geral');
   const [saving, setSaving] = useState(false);
+  const [updatingId, setUpdatingId] = useState('');
 
   const loadData = useCallback(async () => {
     try {
@@ -65,20 +72,33 @@ export default function DashboardClient({
   }, [router]);
 
   const monthTransactions = useMemo(
-    () => transactions.filter((transaction) => transaction.date.slice(0, 7) === month),
+    () => transactions.filter((transaction) => (
+      (transaction.status === 'PENDENTE' ? transaction.dueDate : transaction.date).slice(0, 7) === month
+    )),
     [transactions, month],
   );
   const income = monthTransactions
-    .filter((transaction) => transaction.type === 'RECEITA')
+    .filter((transaction) => transaction.type === 'RECEITA' && transaction.status === 'PAGO')
     .reduce((total, transaction) => total + transaction.amount, 0);
   const expenses = monthTransactions
-    .filter((transaction) => transaction.type === 'DESPESA')
+    .filter((transaction) => transaction.type === 'DESPESA' && transaction.status === 'PAGO')
     .reduce((total, transaction) => total + transaction.amount, 0);
   const balance = income - expenses;
+  const pendingTransactions = transactions.filter(
+    (transaction) => transaction.status === 'PENDENTE' && transaction.dueDate.slice(0, 7) === month,
+  );
+  const pendingIncome = pendingTransactions
+    .filter((transaction) => transaction.type === 'RECEITA')
+    .reduce((total, transaction) => total + transaction.amount, 0);
+  const pendingExpenses = pendingTransactions
+    .filter((transaction) => transaction.type === 'DESPESA')
+    .reduce((total, transaction) => total + transaction.amount, 0);
+  const projectedBalance = balance + pendingIncome - pendingExpenses;
   const visibleTransactions = monthTransactions.filter((transaction) => {
     const matchesType = filter === 'TODOS' || transaction.type === filter;
-    const matchesSearch = `${transaction.description} ${transaction.category}`.toLowerCase().includes(search.toLowerCase());
-    return matchesType && matchesSearch;
+    const matchesStatus = statusFilter === 'TODOS' || transaction.status === statusFilter;
+    const matchesSearch = `${transaction.description} ${transaction.category} ${transaction.costCenter}`.toLowerCase().includes(search.toLowerCase());
+    return matchesType && matchesStatus && matchesSearch;
   });
 
   const openNewTransaction = () => {
@@ -86,8 +106,11 @@ export default function DashboardClient({
     setDescription('');
     setAmount('');
     setType('DESPESA');
-    setCategory(categories[0]);
+    setCategory('Outros');
     setDate(today());
+    setDueDate(today());
+    setStatus('PENDENTE');
+    setCostCenter('Geral');
     setShowForm(true);
   };
 
@@ -98,6 +121,9 @@ export default function DashboardClient({
     setType(transaction.type);
     setCategory(transaction.category);
     setDate(transaction.date.slice(0, 10));
+    setDueDate(transaction.dueDate.slice(0, 10));
+    setStatus(transaction.status);
+    setCostCenter(transaction.costCenter);
     setShowForm(true);
   };
 
@@ -116,6 +142,9 @@ export default function DashboardClient({
           type,
           category,
           date,
+          dueDate,
+          status,
+          costCenter,
         }),
       });
       const data = await response.json();
@@ -146,15 +175,50 @@ export default function DashboardClient({
     }
   };
 
+  const markAsPaid = async (transaction: Transaction) => {
+    setUpdatingId(transaction.id);
+    setError('');
+    try {
+      const response = await fetch('/api/transactions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: transaction.id,
+          description: transaction.description,
+          amount: transaction.amount,
+          type: transaction.type,
+          category: transaction.category,
+          date: transaction.date.slice(0, 10),
+          dueDate: transaction.dueDate.slice(0, 10),
+          status: 'PAGO',
+          costCenter: transaction.costCenter,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Não foi possível atualizar a situação.');
+      await loadData();
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : 'Erro ao atualizar a situação.');
+    } finally {
+      setUpdatingId('');
+    }
+  };
+
   const exportCsv = () => {
-    const rows = [['Data', 'Descrição', 'Categoria', 'Tipo', 'Valor'], ...visibleTransactions.map((transaction) => [
+    const rows = [['Data', 'Vencimento', 'Descrição', 'Categoria', 'Centro de custo', 'Situação', 'Tipo', 'Valor'], ...visibleTransactions.map((transaction) => [
       transaction.date.slice(0, 10),
+      transaction.dueDate.slice(0, 10),
       transaction.description,
       transaction.category,
+      transaction.costCenter,
+      transaction.status === 'PAGO' ? 'Pago/recebido' : 'Pendente',
       transaction.type === 'RECEITA' ? 'Receita' : 'Despesa',
       transaction.amount.toFixed(2).replace('.', ','),
     ])];
-    const csv = `\uFEFF${rows.map((row) => row.map((cell) => `"${cell.replaceAll('"', '""')}"`).join(';')).join('\r\n')}`;
+    const csv = `\uFEFF${rows.map((row) => row.map((cell) => {
+      const safeCell = /^[=+\-@\t\r]/.test(cell) ? `\t${cell}` : cell;
+      return `"${safeCell.replaceAll('"', '""')}"`;
+    }).join(';')).join('\r\n')}`;
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
     const anchor = document.createElement('a');
     anchor.href = url;
@@ -180,8 +244,8 @@ export default function DashboardClient({
       const monthRows = transactions.filter((transaction) => transaction.date.slice(0, 7) === key);
       return {
         label: dateValue.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', ''),
-        income: monthRows.filter((item) => item.type === 'RECEITA').reduce((total, item) => total + item.amount, 0),
-        expenses: monthRows.filter((item) => item.type === 'DESPESA').reduce((total, item) => total + item.amount, 0),
+        income: monthRows.filter((item) => item.type === 'RECEITA' && item.status === 'PAGO').reduce((total, item) => total + item.amount, 0),
+        expenses: monthRows.filter((item) => item.type === 'DESPESA' && item.status === 'PAGO').reduce((total, item) => total + item.amount, 0),
       };
     });
   }, [month, transactions]);
@@ -216,10 +280,10 @@ export default function DashboardClient({
         {error && <div className="alert alert-error" role="alert">{error}<button onClick={() => setError('')} aria-label="Fechar aviso">×</button></div>}
 
         <section className="metrics-grid" aria-label="Resumo financeiro do mês">
-          <article className="metric-card balance-card"><div className="metric-top"><span>Saldo do período</span><span className="metric-icon violet">◈</span></div><strong className="metric-value">{currency.format(balance)}</strong><small>Receitas menos despesas do mês selecionado</small></article>
-          <article className="metric-card"><div className="metric-top"><span>Entradas</span><span className="metric-icon green">↗</span></div><strong className="metric-value">{currency.format(income)}</strong><small className="positive-text">Total recebido no período</small></article>
-          <article className="metric-card"><div className="metric-top"><span>Saídas</span><span className="metric-icon red">↘</span></div><strong className="metric-value">{currency.format(expenses)}</strong><small className="negative-text">Total gasto no período</small></article>
-          <article className="metric-card"><div className="metric-top"><span>Lançamentos</span><span className="metric-icon blue">▤</span></div><strong className="metric-value">{monthTransactions.length}</strong><small>Movimentações registradas no mês</small></article>
+          <article className="metric-card balance-card"><div className="metric-top"><span>Saldo realizado</span><span className="metric-icon violet">◈</span></div><strong className={`metric-value ${balance >= 0 ? 'positive-text' : 'negative-text'}`}>{currency.format(balance)}</strong><small>Entradas recebidas menos despesas pagas</small></article>
+          <article className="metric-card"><div className="metric-top"><span>Entradas recebidas</span><span className="metric-icon green">↗</span></div><strong className="metric-value">{currency.format(income)}</strong><small className="positive-text">Valores já recebidos</small></article>
+          <article className="metric-card"><div className="metric-top"><span>Despesas pagas</span><span className="metric-icon red">↘</span></div><strong className="metric-value">{currency.format(expenses)}</strong><small className="negative-text">Valores já pagos</small></article>
+          <article className="metric-card"><div className="metric-top"><span>Saldo projetado</span><span className="metric-icon blue">▤</span></div><strong className={`metric-value ${projectedBalance >= 0 ? 'positive-text' : 'negative-text'}`}>{currency.format(projectedBalance)}</strong><small>Considera contas pendentes no mês</small></article>
         </section>
 
         <section className="content-grid">
@@ -237,7 +301,7 @@ export default function DashboardClient({
             <div className="panel-heading"><div><h2>Período</h2><p className="muted">Selecione o mês do resumo</p></div></div>
             <label className="field-label" htmlFor="month-filter">Mês de referência</label>
             <input className="input-control" id="month-filter" type="month" value={month} onChange={(event) => setMonth(event.target.value)} />
-            <div className="period-summary"><span>Resultado do mês</span><strong className={balance >= 0 ? 'positive-text' : 'negative-text'}>{currency.format(balance)}</strong></div>
+            <div className="period-summary"><span>Contas a receber</span><strong className="positive-text">{currency.format(pendingIncome)}</strong><span>Contas a pagar</span><strong className="negative-text">{currency.format(pendingExpenses)}</strong><span>Saldo projetado</span><strong className={projectedBalance >= 0 ? 'positive-text' : 'negative-text'}>{currency.format(projectedBalance)}</strong></div>
             <Link className="text-link" href="/relatorios">Ver relatório completo <span>→</span></Link>
           </article>
         </section>
@@ -247,17 +311,19 @@ export default function DashboardClient({
             <div className="table-actions"><button className="button button-secondary" onClick={exportCsv} disabled={!visibleTransactions.length}>↓ Exportar CSV</button></div>
           </div>
           <div className="filters-row">
-            <label className="search-field"><span>⌕</span><input aria-label="Buscar lançamento" placeholder="Buscar por descrição ou categoria" value={search} onChange={(event) => setSearch(event.target.value)} /></label>
+            <label className="search-field"><span>⌕</span><input aria-label="Buscar lançamento" placeholder="Buscar descrição, categoria ou centro de custo" value={search} onChange={(event) => setSearch(event.target.value)} /></label>
             <select className="select-control" aria-label="Filtrar por tipo" value={filter} onChange={(event) => setFilter(event.target.value)}><option value="TODOS">Todos os tipos</option><option value="RECEITA">Entradas</option><option value="DESPESA">Saídas</option></select>
+            <select className="select-control" aria-label="Filtrar por situação" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="TODOS">Todas as situações</option><option value="PENDENTE">Pendentes</option><option value="PAGO">Pagos / recebidos</option></select>
           </div>
-          <div className="table-wrap"><table className="transactions-table"><thead><tr><th>Descrição</th><th>Categoria</th><th>Data</th><th>Tipo</th><th className="align-right">Valor</th><th><span className="sr-only">Ações</span></th></tr></thead>
+          <div className="table-wrap"><table className="transactions-table"><thead><tr><th>Descrição</th><th>Categoria</th><th>Centro de custo</th><th>Vencimento</th><th>Situação</th><th>Tipo</th><th className="align-right">Valor</th><th><span className="sr-only">Ações</span></th></tr></thead>
             <tbody>{visibleTransactions.map((transaction) => <tr key={transaction.id}>
-              <td><strong className="transaction-description">{transaction.description}</strong></td><td><span className="category-pill">{transaction.category}</span></td><td>{new Date(`${transaction.date.slice(0, 10)}T12:00:00`).toLocaleDateString('pt-BR')}</td>
+              <td><strong className="transaction-description">{transaction.description}</strong></td><td><span className="category-pill">{transaction.category}</span></td><td>{transaction.costCenter}</td><td>{new Date(`${transaction.dueDate.slice(0, 10)}T12:00:00`).toLocaleDateString('pt-BR')}</td>
+              <td><span className={`type-pill ${transaction.status === 'PAGO' ? 'type-income' : transaction.dueDate.slice(0, 10) < today() ? 'type-expense' : 'status-pending'}`}>{transaction.status === 'PAGO' ? (transaction.type === 'RECEITA' ? 'Recebido' : 'Pago') : transaction.dueDate.slice(0, 10) < today() ? 'Atrasado' : 'Pendente'}</span></td>
               <td><span className={`type-pill ${transaction.type === 'RECEITA' ? 'type-income' : 'type-expense'}`}>{transaction.type === 'RECEITA' ? 'Entrada' : 'Saída'}</span></td>
               <td className={`align-right amount-cell ${transaction.type === 'RECEITA' ? 'positive-text' : 'negative-text'}`}>{transaction.type === 'DESPESA' ? '− ' : '+ '}{currency.format(transaction.amount)}</td>
-              <td><div className="row-actions"><button aria-label={`Editar ${transaction.description}`} title="Editar" onClick={() => openEditTransaction(transaction)}>✎</button><button aria-label={`Excluir ${transaction.description}`} title="Excluir" onClick={() => void deleteTransaction(transaction)}>×</button></div></td>
+              <td><div className="row-actions">{transaction.status === 'PENDENTE' && <button className="mark-paid-button" aria-label={transaction.type === 'RECEITA' ? `Marcar ${transaction.description} como recebido` : `Marcar ${transaction.description} como pago`} title={transaction.type === 'RECEITA' ? 'Marcar como recebido' : 'Marcar como pago'} disabled={updatingId === transaction.id} onClick={() => void markAsPaid(transaction)}>✓</button>}<button aria-label={`Editar ${transaction.description}`} title="Editar" onClick={() => openEditTransaction(transaction)}>✎</button><button aria-label={`Excluir ${transaction.description}`} title="Excluir" onClick={() => void deleteTransaction(transaction)}>×</button></div></td>
             </tr>)}
-            {!visibleTransactions.length && <tr><td colSpan={6}><div className="empty-state"><span className="empty-icon">▤</span><strong>Nenhum lançamento encontrado</strong><p>{monthTransactions.length ? 'Experimente mudar os filtros.' : 'Adicione seu primeiro lançamento para começar a acompanhar suas finanças.'}</p>{!monthTransactions.length && <button className="button button-primary" onClick={openNewTransaction}>Adicionar lançamento</button>}</div></td></tr>}
+            {!visibleTransactions.length && <tr><td colSpan={8}><div className="empty-state"><span className="empty-icon">▤</span><strong>Nenhum lançamento encontrado</strong><p>{monthTransactions.length ? 'Experimente mudar os filtros.' : 'Adicione seu primeiro lançamento para começar a acompanhar suas finanças.'}</p>{!monthTransactions.length && <button className="button button-primary" onClick={openNewTransaction}>Adicionar lançamento</button>}</div></td></tr>}
             </tbody></table></div>
         </section>
         <footer className="app-footer">Anhanguera Financia <span>•</span> Seus dados financeiros, organizados com clareza.</footer>
@@ -270,8 +336,11 @@ export default function DashboardClient({
             <label className="field-label">Tipo de lançamento<select className="input-control" value={type} onChange={(event) => setType(event.target.value as 'RECEITA' | 'DESPESA')}><option value="DESPESA">Saída / Despesa</option><option value="RECEITA">Entrada / Receita</option></select></label>
             <label className="field-label">Descrição<input className="input-control" maxLength={120} required placeholder="Ex.: Conta de energia" value={description} onChange={(event) => setDescription(event.target.value)} /></label>
             <div className="form-row"><label className="field-label">Valor (R$)<input className="input-control" type="number" min="0.01" step="0.01" required placeholder="0,00" value={amount} onChange={(event) => setAmount(event.target.value)} /></label>
-              <label className="field-label">Data<input className="input-control" type="date" required value={date} onChange={(event) => setDate(event.target.value)} /></label></div>
-            <label className="field-label">Categoria<select className="input-control" value={category} onChange={(event) => setCategory(event.target.value)}>{categories.map((item) => <option key={item}>{item}</option>)}</select></label>
+              <label className="field-label">Data do lançamento<input className="input-control" type="date" required value={date} onChange={(event) => setDate(event.target.value)} /></label></div>
+            <div className="form-row"><label className="field-label">Vencimento<input className="input-control" type="date" required value={dueDate} onChange={(event) => setDueDate(event.target.value)} /></label>
+              <label className="field-label">Situação<select className="input-control" value={status} onChange={(event) => setStatus(event.target.value as 'PENDENTE' | 'PAGO')}><option value="PENDENTE">Pendente</option><option value="PAGO">Pago / recebido</option></select></label></div>
+            <div className="form-row"><label className="field-label">Categoria<input className="input-control" maxLength={60} required placeholder="Ex.: Fornecedores, marketing" value={category} onChange={(event) => setCategory(event.target.value)} /></label>
+              <label className="field-label">Centro de custo<input className="input-control" maxLength={80} required placeholder="Ex.: Operações, filial Centro" value={costCenter} onChange={(event) => setCostCenter(event.target.value)} /></label></div>
             {error && <div className="alert alert-error" role="alert">{error}</div>}
             <div className="modal-actions"><button className="button button-secondary" type="button" onClick={() => setShowForm(false)}>Cancelar</button><button className="button button-primary" type="submit" disabled={saving}>{saving ? 'Salvando...' : editing ? 'Salvar alterações' : 'Adicionar lançamento'}</button></div>
           </form>
