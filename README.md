@@ -34,6 +34,13 @@ Aplicação de gestão financeira com contas individuais, lançamentos persistid
 
 `SESSION_SECRET` deve ser uma chave aleatória com pelo menos 32 caracteres. Em produção, configure-a no gerenciador de segredos do ambiente; não reutilize o valor de exemplo.
 
+## Publicação na Vercel
+
+- Configure `DATABASE_URL` para o banco PostgreSQL de produção e `SESSION_SECRET` como uma chave aleatória própria com pelo menos 32 caracteres. Não use o valor de exemplo nem publique segredos no Git.
+- O `vercel.json` configura o build de produção para aplicar as migrações de `prisma/migrations` antes de compilar o Next.js.
+- O Prisma Client é gerado durante a instalação das dependências.
+- Após configurar as variáveis, publique uma nova implantação de produção.
+
 ## Funcionalidades
 
 - Cadastro e login com sessão em cookie `HttpOnly`.
