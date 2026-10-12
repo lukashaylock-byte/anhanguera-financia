@@ -17,7 +17,16 @@ type Transaction = {
   costCenter: string;
 };
 
-type User = { id: string; fullName: string; email: string };
+type Workspace = { id: string; name: string; role: string };
+type User = {
+  id: string;
+  fullName: string;
+  email: string;
+  companyId: string;
+  companyName: string;
+  role: string;
+  workspaces: Workspace[];
+};
 
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const today = () => {
@@ -256,7 +265,7 @@ export default function DashboardClient({
 
   return (
     <div className="app-shell">
-      <AppSidebar fullName={user.fullName} email={user.email} onLogout={() => void logout()} />
+      <AppSidebar fullName={user.fullName} email={user.email} companyId={user.companyId} companyName={user.companyName} workspaces={user.workspaces} onLogout={() => void logout()} />
 
       <main className="main-content">
         <header className="topbar">

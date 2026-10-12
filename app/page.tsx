@@ -25,7 +25,7 @@ export default async function DashboardPage({
   const params = await searchParams;
 
   const transactions = await prisma.transaction.findMany({
-    where: { userId: user.id },
+    where: { companyId: user.companyId },
     orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
     select: { id: true, description: true, amount: true, type: true, category: true, date: true, dueDate: true, status: true, costCenter: true },
   });

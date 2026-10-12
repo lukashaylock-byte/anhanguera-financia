@@ -17,7 +17,8 @@ type Transaction = {
   costCenter: string;
 };
 
-type User = { fullName: string; email: string };
+type Workspace = { id: string; name: string; role: string };
+type User = { fullName: string; email: string; companyId: string; companyName: string; workspaces: Workspace[] };
 type Group = { name: string; amount: number; count: number; share: number };
 
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -108,7 +109,7 @@ export default function CostCentersPage() {
 
   return (
     <div className="app-shell">
-      <AppSidebar fullName={user?.fullName ?? ''} email={user?.email} onLogout={() => void logout()} />
+      <AppSidebar fullName={user?.fullName ?? ''} email={user?.email} companyId={user?.companyId ?? ''} companyName={user?.companyName ?? ''} workspaces={user?.workspaces ?? []} onLogout={() => void logout()} />
       <main className="main-content">
         <header className="topbar"><div className="breadcrumb"><Link href="/">Painel</Link><span>/</span>Centros de custo</div><div className="topbar-status"><span className="security-dot" />Análise de despesas pagas</div></header>
         <section className="page-heading"><div><p className="eyebrow">CUSTOS POR ÁREA, PROJETO OU FILIAL</p><h1>Centros de custo</h1><p className="muted">Entenda onde a empresa concentra suas despesas.</p></div><Link className="button button-secondary" href="/relatorios">Abrir relatórios completos <span>→</span></Link></section>

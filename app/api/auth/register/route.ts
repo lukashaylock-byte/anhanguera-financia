@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
-import { createSessionToken, isUniqueConstraintError, SESSION_COOKIE, SESSION_MAX_AGE } from '@/lib/auth';
+import { isUniqueConstraintError, setSessionCookie } from '@/lib/auth';
 
 function isValidCpf(value: string) {
   const cpf = value.replace(/\D/g, '');
@@ -30,12 +30,15 @@ export async function POST(request: Request) {
     const password = 'password' in input && typeof input.password === 'string' ? input.password : '';
     const cpf = 'cpf' in input && typeof input.cpf === 'string' ? input.cpf.replace(/\D/g, '') : '';
     const birthDate = 'birthDate' in input && typeof input.birthDate === 'string' ? input.birthDate : '';
+    const companyName = 'companyName' in input && typeof input.companyName === 'string'
+      ? input.companyName.trim()
+      : `${fullName} - Empresa`;
 
-    if (!fullName || !email || !password || !cpf || !birthDate) {
-      return NextResponse.json({ error: 'Preencha todos os campos obrigatórios.' }, { status: 400 });
+    if (!fullName || !email || !password || !cpf || !birthDate || !companyName) {
+      return NextResponse.json({ error: 'Preencha todos os campos obrigatórios, incluindo o nome da empresa.' }, { status: 400 });
     }
-    if (fullName.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
-      return NextResponse.json({ error: 'Confira seu nome e endereço de e-mail.' }, { status: 400 });
+    if (fullName.length > 120 || companyName.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+      return NextResponse.json({ error: 'Confira o nome, o nome da empresa e o endereço de e-mail.' }, { status: 400 });
     }
     if (password.length < 8 || password.length > 72) {
       return NextResponse.json({ error: 'A senha deve ter entre 8 e 72 caracteres.' }, { status: 400 });
@@ -53,24 +56,25 @@ export async function POST(request: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await prisma.user.create({
-      data: {
-        fullName,
-        email,
-        password: hashedPassword,
-        cpf,
-        birthDate: parsedBirthDate,
-      },
+    const user = await prisma.$transaction(async (transaction) => {
+      const createdUser = await transaction.user.create({
+        data: {
+          fullName,
+          email,
+          password: hashedPassword,
+          cpf,
+          birthDate: parsedBirthDate,
+        },
+      });
+      const company = await transaction.company.create({ data: { name: companyName } });
+      await transaction.membership.create({
+        data: { userId: createdUser.id, companyId: company.id, role: 'ADMINISTRADOR' },
+      });
+      return { ...createdUser, companyId: company.id };
     });
 
     const response = NextResponse.json({ message: 'Conta criada com sucesso!', userId: user.id }, { status: 201 });
-    response.cookies.set(SESSION_COOKIE, createSessionToken(user.id), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: SESSION_MAX_AGE,
-    });
+    setSessionCookie(response, user.id, user.companyId);
     return response;
   } catch (error) {
     if (isUniqueConstraintError(error)) {

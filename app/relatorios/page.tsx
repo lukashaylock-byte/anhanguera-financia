@@ -16,7 +16,8 @@ type Transaction = {
   status: 'PENDENTE' | 'PAGO';
   costCenter: string;
 };
-type User = { fullName: string; email: string };
+type Workspace = { id: string; name: string; role: string };
+type User = { fullName: string; email: string; companyId: string; companyName: string; workspaces: Workspace[] };
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const currentMonth = () => {
   const date = new Date();
@@ -92,7 +93,7 @@ export default function RelatoriosPage() {
 
   return (
     <div className="app-shell">
-      <AppSidebar fullName={user?.fullName ?? ''} email={user?.email} onLogout={() => { void (async () => { const response = await fetch('/api/auth/logout', { method: 'POST' }); if (response.ok) router.replace('/login'); else setError('Não foi possível encerrar a sessão.'); })(); }} />
+      <AppSidebar fullName={user?.fullName ?? ''} email={user?.email} companyId={user?.companyId ?? ''} companyName={user?.companyName ?? ''} workspaces={user?.workspaces ?? []} onLogout={() => { void (async () => { const response = await fetch('/api/auth/logout', { method: 'POST' }); if (response.ok) router.replace('/login'); else setError('Não foi possível encerrar a sessão.'); })(); }} />
       <main className="main-content">
         <header className="topbar"><div className="breadcrumb"><Link href="/">Painel</Link><span>/</span>Relatórios</div><div className="account-chip"><span className="avatar">{user?.fullName.slice(0, 1).toUpperCase() || 'U'}</span><div><strong>{user?.fullName}</strong><small>Relatório financeiro</small></div></div></header>
         <section className="page-heading"><div><p className="eyebrow">ANÁLISE DAS SUAS FINANÇAS</p><h1>Relatórios</h1><p className="muted">Entenda para onde seu dinheiro está indo.</p></div><button className="button button-secondary" onClick={() => window.print()}>⌑ Imprimir relatório</button></section>

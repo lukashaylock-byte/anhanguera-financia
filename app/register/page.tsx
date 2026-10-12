@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ fullName: '', email: '', password: '', cpf: '', birthDate: '' });
+  const [form, setForm] = useState({ companyName: '', fullName: '', email: '', password: '', cpf: '', birthDate: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -54,6 +54,7 @@ export default function RegisterPage() {
           <p className="auth-intro">Crie seu acesso para começar a acompanhar as finanças do negócio.</p>
           {error && <div className="alert alert-error" role="alert">{error}</div>}
           <form className="auth-form register-form" onSubmit={handleSubmit}>
+            <label className="field-label" htmlFor="companyName">Nome da empresa<input autoComplete="organization" className="input-control" id="companyName" type="text" maxLength={120} required value={form.companyName} onChange={(event) => setForm({ ...form, companyName: event.target.value })} placeholder="Ex.: Empresa Anhanguera" /></label>
             <label className="field-label" htmlFor="fullName">Nome completo<input autoComplete="name" className="input-control" id="fullName" type="text" maxLength={120} required value={form.fullName} onChange={(event) => setForm({ ...form, fullName: event.target.value })} placeholder="Como podemos chamar você?" /></label>
             <label className="field-label" htmlFor="registerEmail">E-mail<input autoComplete="email" className="input-control" id="registerEmail" type="email" required value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} placeholder="voce@exemplo.com" /></label>
             <div className="form-row">

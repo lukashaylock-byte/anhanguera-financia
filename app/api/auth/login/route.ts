@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
-import { createSessionToken, SESSION_COOKIE, SESSION_MAX_AGE } from '@/lib/auth';
+import { setSessionCookie } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
@@ -21,9 +21,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Informe o e-mail e a senha.' }, { status: 400 });
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { memberships: { select: { companyId: true }, orderBy: { createdAt: 'asc' }, take: 1 } },
+    });
     if (!user) {
       return NextResponse.json({ error: 'E-mail ou senha inválidos.' }, { status: 401 });
+    }
+    if (!user.memberships[0]) {
+      console.error(`Conta ${user.id} não possui uma associação empresarial.`);
+      return NextResponse.json({ error: 'A conta ainda não está associada a uma empresa.' }, { status: 403 });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -35,13 +42,7 @@ export async function POST(request: Request) {
       message: 'Login realizado com sucesso!',
       user: { id: user.id, fullName: user.fullName, email: user.email }
     });
-    response.cookies.set(SESSION_COOKIE, createSessionToken(user.id), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: SESSION_MAX_AGE,
-    });
+    setSessionCookie(response, user.id, user.memberships[0].companyId);
     return response;
   } catch (error) {
     console.error('Erro no login:', error);

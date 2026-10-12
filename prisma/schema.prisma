@@ -14,7 +14,48 @@ model User {
   cpf          String        @unique
   birthDate    DateTime
   createdAt    DateTime      @default(now())
+  memberships  Membership[]
   transactions Transaction[]
+  invitations  Invitation[]  @relation("InvitationCreator")
+}
+
+model Company {
+  id           String        @id @default(uuid())
+  name         String
+  createdAt    DateTime      @default(now())
+  memberships  Membership[]
+  transactions Transaction[]
+  invitations  Invitation[]
+}
+
+model Membership {
+  id        String   @id @default(uuid())
+  userId    String
+  companyId String
+  role      String   @default("LEITURA")
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId])
+  @@index([companyId, role])
+}
+
+model Invitation {
+  id          String    @id @default(uuid())
+  companyId   String
+  invitedById String
+  email       String
+  role        String
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invitedBy   User      @relation("InvitationCreator", fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, email])
+  @@index([companyId, acceptedAt])
 }
 
 model Transaction {
@@ -27,7 +68,11 @@ model Transaction {
   dueDate     DateTime?
   status      String    @default("PAGO")
   costCenter  String    @default("Geral")
+  companyId   String
   userId      String
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime  @default(now())
+
+  @@index([companyId, date])
 }

@@ -45,7 +45,7 @@ export async function GET() {
     if (!user) return NextResponse.json({ error: 'Sessão expirada.' }, { status: 401 });
 
     const transactions = await prisma.transaction.findMany({
-      where: { userId: user.id },
+      where: { companyId: user.companyId },
       orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
       select: { id: true, description: true, amount: true, type: true, category: true, date: true, dueDate: true, status: true, costCenter: true },
     });
@@ -60,6 +60,7 @@ export async function POST(request: Request) {
   try {
     const user = await getAuthenticatedUser();
     if (!user) return NextResponse.json({ error: 'Sessão expirada.' }, { status: 401 });
+    if (user.role === 'LEITURA') return NextResponse.json({ error: 'Seu perfil permite consultar, mas não alterar lançamentos.' }, { status: 403 });
     let input: unknown;
     try {
       input = await request.json();
@@ -90,6 +91,7 @@ export async function POST(request: Request) {
         dueDate: values.dueDate,
         status: values.status,
         costCenter: values.costCenter,
+        companyId: user.companyId,
       },
       select: { id: true, description: true, amount: true, type: true, category: true, date: true, dueDate: true, status: true, costCenter: true },
     });
@@ -104,6 +106,7 @@ export async function PATCH(request: Request) {
   try {
     const user = await getAuthenticatedUser();
     if (!user) return NextResponse.json({ error: 'Sessão expirada.' }, { status: 401 });
+    if (user.role === 'LEITURA') return NextResponse.json({ error: 'Seu perfil permite consultar, mas não alterar lançamentos.' }, { status: 403 });
     let input: unknown;
     try {
       input = await request.json();
@@ -124,7 +127,7 @@ export async function PATCH(request: Request) {
     ) return NextResponse.json({ error: 'Confira a descrição, o valor, a categoria, o centro de custo e as datas.' }, { status: 400 });
 
     const result = await prisma.transaction.updateMany({
-      where: { id: input.id, userId: user.id },
+      where: { id: input.id, companyId: user.companyId },
       data: {
         description: values.description,
         amount: values.amount,
@@ -148,6 +151,7 @@ export async function DELETE(request: Request) {
   try {
     const user = await getAuthenticatedUser();
     if (!user) return NextResponse.json({ error: 'Sessão expirada.' }, { status: 401 });
+    if (user.role === 'LEITURA') return NextResponse.json({ error: 'Seu perfil permite consultar, mas não excluir lançamentos.' }, { status: 403 });
     let input: unknown;
     try {
       input = await request.json();
@@ -157,7 +161,7 @@ export async function DELETE(request: Request) {
     if (!isRecord(input) || typeof input.id !== 'string') {
       return NextResponse.json({ error: 'Identificador do lançamento inválido.' }, { status: 400 });
     }
-    const result = await prisma.transaction.deleteMany({ where: { id: input.id, userId: user.id } });
+    const result = await prisma.transaction.deleteMany({ where: { id: input.id, companyId: user.companyId } });
     if (!result.count) return NextResponse.json({ error: 'Lançamento não encontrado.' }, { status: 404 });
     return NextResponse.json({ message: 'Lançamento excluído.' });
   } catch (error) {

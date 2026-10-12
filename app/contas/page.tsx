@@ -17,7 +17,8 @@ type Transaction = {
   costCenter: string;
 };
 
-type User = { fullName: string; email: string };
+type Workspace = { id: string; name: string; role: string };
+type User = { fullName: string; email: string; companyId: string; companyName: string; workspaces: Workspace[] };
 
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const today = () => {
@@ -116,7 +117,7 @@ export default function ContasPage() {
 
   return (
     <div className="app-shell">
-      <AppSidebar fullName={user?.fullName ?? ''} email={user?.email} onLogout={() => void logout()} />
+      <AppSidebar fullName={user?.fullName ?? ''} email={user?.email} companyId={user?.companyId ?? ''} companyName={user?.companyName ?? ''} workspaces={user?.workspaces ?? []} onLogout={() => void logout()} />
       <main className="main-content">
         <header className="topbar"><div className="breadcrumb"><Link href="/">Painel</Link><span>/</span>Contas</div><div className="topbar-status"><span className="security-dot" />Visão financeira atualizada</div></header>
         <section className="page-heading"><div><p className="eyebrow">CONTROLE DE PAGAMENTOS E RECEBIMENTOS</p><h1>Contas</h1><p className="muted">Acompanhe vencimentos e mantenha o caixa da empresa em dia.</p></div><Link className="button button-primary" href="/?novo=1"><span>＋</span>Novo lançamento</Link></section>

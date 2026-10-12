@@ -23,7 +23,11 @@ export default function LoginPage() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Não foi possível entrar na sua conta.');
-      router.replace('/');
+      const requestedDestination = new URLSearchParams(window.location.search).get('redirectTo') ?? '/';
+      const destination = new URL(requestedDestination, window.location.origin);
+      router.replace(destination.origin === window.location.origin
+        ? `${destination.pathname}${destination.search}${destination.hash}`
+        : '/');
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Ocorreu um erro ao entrar.');
     } finally {
