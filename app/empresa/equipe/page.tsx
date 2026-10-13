@@ -9,6 +9,20 @@ type Workspace = { id: string; name: string; role: string; workspaceType: string
 type User = { id: string; fullName: string; email: string; companyId: string; companyName: string; role: string; workspaces: Workspace[] };
 type Member = { id: string; role: string; createdAt: string; user: { id: string; fullName: string; email: string } };
 type TeamData = { company: { id: string; name: string }; memberships: Member[] };
+type EncryptionProgress = {
+  keyConfigured: boolean;
+  migrationReady: boolean;
+  usersWithPlaintext: number;
+  invitationsWithPlaintext: number;
+  finalized: boolean;
+};
+
+async function fetchEncryptionProgress() {
+  const response = await fetch('/api/company/encryption/finalize', { cache: 'no-store' });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Não foi possível verificar a criptografia.');
+  return data as EncryptionProgress;
+}
 
 const roleNames: Record<string, string> = {
   ADMINISTRADOR: 'Administrador',
@@ -31,6 +45,9 @@ export default function TeamPage() {
   const [saving, setSaving] = useState(false);
   const [addingMember, setAddingMember] = useState(false);
   const [finalizingEncryption, setFinalizingEncryption] = useState(false);
+  const [encryptionProgress, setEncryptionProgress] = useState<EncryptionProgress | null>(null);
+  const [encryptionStatusError, setEncryptionStatusError] = useState('');
+  const [backupConfirmed, setBackupConfirmed] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
@@ -67,6 +84,32 @@ export default function TeamPage() {
     void load();
     return () => { active = false; };
   }, [loadData]);
+
+  const refreshEncryptionProgress = useCallback(async () => {
+    try {
+      setEncryptionProgress(await fetchEncryptionProgress());
+      setEncryptionStatusError('');
+    } catch (statusError) {
+      setEncryptionStatusError(statusError instanceof Error ? statusError.message : 'Não foi possível verificar a criptografia.');
+    }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const checkProgress = async () => {
+      try {
+        const progress = await fetchEncryptionProgress();
+        if (active) {
+          setEncryptionProgress(progress);
+          setEncryptionStatusError('');
+        }
+      } catch (statusError) {
+        if (active) setEncryptionStatusError(statusError instanceof Error ? statusError.message : 'Não foi possível verificar a criptografia.');
+      }
+    };
+    void checkProgress();
+    return () => { active = false; };
+  }, []);
 
   const refreshTeam = async () => {
     const data = await loadData();
@@ -148,16 +191,22 @@ export default function TeamPage() {
   };
 
   const finalizeEncryption = async () => {
-    const confirmed = window.confirm('Isso criptografa nome, e-mail, CPF e nascimento de todas as contas do sistema e remove as cópias em texto puro. Confirme que a nova implantação já está ativa e que há um backup restaurável.');
+    const confirmed = window.confirm('Esta ação se aplica a todas as contas e convites do sistema e remove permanentemente os campos pessoais em texto puro. Confirme que você possui um backup restaurável e uma cópia segura da chave de criptografia.');
     if (!confirmed) return;
     setFinalizingEncryption(true);
     setError('');
     setNotice('');
     try {
-      const response = await fetch('/api/company/encryption/finalize', { method: 'POST' });
+      const response = await fetch('/api/company/encryption/finalize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ backupConfirmed: true }),
+      });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Não foi possível finalizar a criptografia.');
       setNotice(data.message);
+      setBackupConfirmed(false);
+      await refreshEncryptionProgress();
     } catch (encryptionError) {
       setError(encryptionError instanceof Error ? encryptionError.message : 'Erro ao finalizar a criptografia.');
     } finally {
@@ -198,7 +247,28 @@ export default function TeamPage() {
           <div className="team-member-list">{team?.memberships.map((member) => <article className="team-member-row" key={member.id}><span className="avatar">{member.user.fullName.slice(0, 1).toUpperCase()}</span><div className="team-member-identity"><strong>{member.user.fullName}</strong><small>{member.user.email}</small></div><span className={`role-badge role-${member.role.toLowerCase()}`}>{roleNames[member.role] ?? member.role}</span>{member.user.id !== user?.id ? <div className="team-member-actions"><label className="sr-only" htmlFor={`role-${member.id}`}>Perfil de {member.user.fullName}</label><select id={`role-${member.id}`} className="select-control" value={member.role} onChange={(event) => void memberRequest(member, 'role', event.target.value)}><option value="ADMINISTRADOR">Administrador</option><option value="FINANCEIRO">Financeiro</option><option value="LEITURA">Somente leitura</option></select><button className="button button-secondary remove-member-button" onClick={() => void memberRequest(member, 'remove')}>Remover</button></div> : <span className="current-member-label">Você</span>}</article>)}</div>
         </section>
         <section className="panel permissions-panel"><div className="panel-heading"><div><h2>O que cada perfil pode fazer</h2><p className="muted">As permissões são verificadas no servidor em cada operação.</p></div></div><div className="permission-grid">{(['ADMINISTRADOR', 'FINANCEIRO', 'LEITURA'] as const).map((item) => <article key={item}><span className={`role-badge role-${item.toLowerCase()}`}>{roleNames[item]}</span><p>{roleDescriptions[item]}</p></article>)}</div></section>
-        <section className="panel permissions-panel"><div className="panel-heading"><div><h2>Criptografia de dados pessoais</h2><p className="muted">AES-256-GCM protege campos pessoais; hashes HMAC permitem localizar contas sem texto puro.</p></div><span className="metric-icon green">◈</span></div><p className="role-description encryption-description">Antes de continuar, configure DATA_ENCRYPTION_KEY na Vercel, publique a migração, confirme que o novo site está ativo e tenha um backup restaurável. Guarde uma cópia segura da chave: sem ela, os dados cifrados não podem ser recuperados.</p><button className="button button-secondary" type="button" disabled={finalizingEncryption} onClick={() => void finalizeEncryption()}>{finalizingEncryption ? 'Criptografando dados...' : 'Finalizar criptografia e remover cópias em texto puro'}</button></section>
+        <section className="panel permissions-panel encryption-panel" aria-labelledby="encryption-title">
+          <div className="panel-heading"><div><h2 id="encryption-title">Criptografia de dados pessoais</h2><p className="muted">AES-256-GCM protege campos pessoais; hashes HMAC permitem localizar contas sem texto puro.</p></div><span className="metric-icon green" aria-hidden="true">◈</span></div>
+          <p className="role-description encryption-description">A verificação confirma se a chave está válida na implantação ativa e se a migração do banco está disponível. A etapa final criptografa os dados pessoais e remove as cópias em texto puro de todas as contas e convites do sistema.</p>
+          <div className="encryption-status" role="status" aria-live="polite">
+            {encryptionStatusError
+              ? <p className="encryption-status-error">{encryptionStatusError}</p>
+              : !encryptionProgress
+                ? <p>Verificando chave e migração...</p>
+                : encryptionProgress.finalized
+                  ? <p className="encryption-status-ready">Criptografia finalizada. Não há cópias em texto puro pendentes.</p>
+                  : <ul>
+                      <li>Chave de criptografia: {encryptionProgress.keyConfigured ? 'válida' : 'indisponível'}.</li>
+                      <li>Migração do banco: {encryptionProgress.migrationReady ? 'disponível' : 'pendente'}.</li>
+                      <li>Registros a finalizar: {encryptionProgress.usersWithPlaintext} conta(s) e {encryptionProgress.invitationsWithPlaintext} convite(s).</li>
+                    </ul>}
+          </div>
+          {!encryptionProgress?.finalized && <label className="encryption-backup-confirmation">
+            <input type="checkbox" checked={backupConfirmed} onChange={(event) => setBackupConfirmed(event.target.checked)} />
+            <span>Confirmo que tenho um backup do banco testado para restauração e uma cópia segura da chave guardada fora da Vercel.</span>
+          </label>}
+          <button className="button button-secondary encryption-finalize-button" type="button" disabled={finalizingEncryption || !encryptionProgress || !encryptionProgress.keyConfigured || !encryptionProgress.migrationReady || encryptionProgress.finalized || !backupConfirmed} onClick={() => void finalizeEncryption()}>{finalizingEncryption ? 'Criptografando dados...' : 'Finalizar criptografia e remover cópias em texto puro'}</button>
+        </section>
         <footer className="app-footer">Anhanguera Financia <span>•</span> Gestão de acessos da empresa.</footer>
       </main>
     </div>

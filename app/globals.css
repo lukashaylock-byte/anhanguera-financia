@@ -436,12 +436,24 @@ a { color: inherit; text-decoration: none; }
 .workspace-select { width: 100%; margin-top: 4px; border: 0; outline: 0; color: #c6d6cb; background: transparent; font-size: 10px; }
 .workspace-select option { color: #173128; background: #fff; }
 .workspace-error { margin: 4px 6px; color: #ffd3d3; font-size: 10px; }
-.encryption-description { max-width: 780px; margin: 15px 0; line-height: 1.7; }
+.encryption-description { max-width: 780px; margin: 15px 0; line-height: 1.7; overflow-wrap: anywhere; }
+.encryption-panel { min-width: 0; }
+.encryption-panel .panel-heading > div { min-width: 0; }
+.encryption-status { margin: 14px 0; padding: 12px 14px; border: 1px solid #e2ebe5; border-radius: 10px; color: #52675b; background: #f8fbf8; font-size: 11px; line-height: 1.6; }
+.encryption-status p { margin: 0; }
+.encryption-status ul { display: grid; gap: 5px; margin: 0; padding-left: 18px; }
+.encryption-status-ready { color: #176b49; font-weight: 700; }
+.encryption-status-error { color: #b13c43; }
+.encryption-backup-confirmation { display: flex; align-items: flex-start; gap: 9px; max-width: 780px; margin: 14px 0; color: #52675b; font-size: 11px; line-height: 1.6; }
+.encryption-backup-confirmation input { flex: 0 0 auto; width: 16px; height: 16px; margin: 1px 0 0; accent-color: #087b78; }
+.encryption-finalize-button { max-width: 100%; white-space: normal; text-align: center; line-height: 1.4; }
 
 @media (max-width: 1100px) {
   .cost-analysis-grid { grid-template-columns: 1fr; }
   .workspace-chip { margin-top: 19px; }
   .team-settings-grid { grid-template-columns: 1fr; }
+  .encryption-panel .panel-heading { align-items: flex-start; gap: 10px; }
+  .encryption-panel .encryption-finalize-button { width: 100%; min-height: 46px; padding: 8px 12px; }
 }
 @media (max-width: 760px) {
   .sidebar { position: static; width: 100%; min-height: 0; padding: 11px 14px; flex-direction: column; align-items: stretch; gap: 10px; }
