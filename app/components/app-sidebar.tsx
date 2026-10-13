@@ -79,8 +79,8 @@ export default function AppSidebar({ fullName, email, companyId, companyName, wo
           const isAdmin = currentWorkspace?.role === 'ADMINISTRADOR';
           if (item.href === '/empresa/equipe' && (!isAdmin || currentWorkspace?.workspaceType !== 'EMPRESA')) return null;
           return (
-            <Link key={item.href} href={item.href} className={`nav-link${active ? ' active' : ''}`} aria-current={active ? 'page' : undefined}>
-              <span className="nav-icon">{item.icon}</span>{item.label}
+            <Link key={item.href} href={item.href} className={`nav-link${active ? ' active' : ''}`} aria-label={item.label} title={item.label} aria-current={active ? 'page' : undefined}>
+              <span className="nav-icon" aria-hidden="true">{item.icon}</span><span className="nav-label">{item.label}</span>
               {item.href === '/contas' && <span className="nav-link-arrow">→</span>}
             </Link>
           );
