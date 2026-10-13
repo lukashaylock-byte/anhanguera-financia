@@ -36,6 +36,7 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
   const [error, setError] = useState('');
@@ -140,9 +141,16 @@ export default function ProfilePage() {
   };
 
   const logout = async () => {
-    const response = await fetch('/api/auth/logout', { method: 'POST' });
-    if (response.ok) router.replace('/login');
-    else setError('Não foi possível encerrar a sessão.');
+    setLoggingOut(true);
+    setError('');
+    try {
+      const response = await fetch('/api/auth/logout', { method: 'POST' });
+      if (!response.ok) throw new Error('Não foi possível encerrar a sessão.');
+      router.replace('/login');
+    } catch (logoutError) {
+      setError(logoutError instanceof Error ? logoutError.message : 'Erro ao encerrar a sessão.');
+      setLoggingOut(false);
+    }
   };
 
   if (loading) return <main className="loading-screen"><span className="spinner" />Carregando seu perfil...</main>;
@@ -174,7 +182,12 @@ export default function ProfilePage() {
               <span className="profile-avatar">{profile.fullName.slice(0, 1).toUpperCase()}</span>
               <div><p className="eyebrow">PERFIL FINANCEIRO</p><h2>{profile.fullName}</h2><p>{profile.email}</p></div>
             </div>
-            <div className="profile-hero-badge"><span className="security-dot" />Dados pessoais criptografados</div>
+            <div className="profile-hero-actions">
+              <div className="profile-hero-badge"><span className="security-dot" />Dados pessoais criptografados</div>
+              <button className="button button-secondary profile-logout-button" type="button" onClick={() => void logout()} disabled={loggingOut}>
+                <span aria-hidden="true">↪</span>{loggingOut ? 'Saindo...' : 'Sair da conta'}
+              </button>
+            </div>
           </section>
 
           <section className="profile-grid">
