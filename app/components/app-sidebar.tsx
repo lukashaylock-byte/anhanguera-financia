@@ -19,6 +19,7 @@ const navigation = [
   { href: '/contas', icon: '▣', label: 'Contas' },
   { href: '/centros-de-custo', icon: '▤', label: 'Centros de custo' },
   { href: '/relatorios', icon: '▥', label: 'Relatórios' },
+  { href: '/perfil', icon: '◉', label: 'Meu perfil' },
   { href: '/empresa/equipe', icon: '♙', label: 'Empresa e equipe' },
 ];
 
@@ -82,7 +83,7 @@ export default function AppSidebar({ fullName, email, companyId, companyName, wo
       </nav>
       <div className="sidebar-bottom">
         <div className="security-note"><span className="security-dot" /><div><strong>Seus dados protegidos</strong><small>Acesso seguro à sua conta</small></div></div>
-        <div className="sidebar-profile"><span className="avatar">{fullName.slice(0, 1).toUpperCase() || 'U'}</span><div><strong>{fullName}</strong><small>{roleLabels[workspaces.find((workspace) => workspace.id === companyId)?.role ?? ''] ?? email ?? 'Conta financeira'}</small></div></div>
+        <Link className="sidebar-profile" href="/perfil" aria-label="Abrir meu perfil"><span className="avatar">{fullName.slice(0, 1).toUpperCase() || 'U'}</span><div><strong>{fullName}</strong><small>{roleLabels[workspaces.find((workspace) => workspace.id === companyId)?.role ?? ''] ?? email ?? 'Conta financeira'}</small></div><span className="profile-arrow" aria-hidden="true">↗</span></Link>
         <button className="nav-link logout-button" type="button" onClick={onLogout}><span className="nav-icon">↪</span>Sair da conta</button>
       </div>
     </aside>

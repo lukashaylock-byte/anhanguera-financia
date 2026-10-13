@@ -270,7 +270,7 @@ export default function DashboardClient({
       <main className="main-content">
         <header className="topbar">
           <div className="breadcrumb">Painel <span>/</span> Visão geral</div>
-          <div className="account-chip"><span className="avatar">{user?.fullName?.slice(0, 1).toUpperCase() || 'U'}</span><div><strong>{user?.fullName}</strong><small>{user?.email}</small></div></div>
+          <Link className="account-chip account-chip-link" href="/perfil" aria-label="Abrir meu perfil"><span className="avatar">{user?.fullName?.slice(0, 1).toUpperCase() || 'U'}</span><div><strong>{user?.fullName}</strong><small>{user?.email}</small></div><span className="profile-arrow" aria-hidden="true">↗</span></Link>
         </header>
 
         <section className="page-heading">
