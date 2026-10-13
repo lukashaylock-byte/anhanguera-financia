@@ -318,6 +318,7 @@ a { color: inherit; text-decoration: none; }
 .nav-icon { font-size: 16px; }
 .nav-link-arrow { margin-left: auto; font-size: 13px; opacity: .55; }
 .sidebar-bottom { display: grid; gap: 9px; }
+.logout-mobile-button { display: none; }
 .security-note { margin: 0; border: 1px solid #ffffff12; background: #ffffff08; }
 .security-note strong { font-size: 10px; }
 .sidebar-profile { display: flex; align-items: center; gap: 9px; padding: 10px 7px 4px; border-top: 1px solid #ffffff1b; }
@@ -457,13 +458,17 @@ a { color: inherit; text-decoration: none; }
 }
 @media (max-width: 760px) {
   .sidebar { position: static; width: 100%; min-height: 0; padding: 11px 14px; flex-direction: column; align-items: stretch; gap: 10px; }
-  .sidebar > .brand { align-self: flex-start; font-size: 14px; }
+  .sidebar-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+  .sidebar-header > .brand { min-width: 0; align-self: flex-start; padding: 0; font-size: 14px; }
+  .logout-desktop-button { display: none; }
+  .logout-mobile-button { display: inline-flex; flex: 0 0 auto; width: auto; min-height: 38px; padding: 0 11px; border: 1px solid #ffffff45; border-radius: 9px; color: #f3fffb; background: #ffffff15; font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .logout-mobile-button:hover { color: #fff; background: #ffffff24; }
   .workspace-chip, .nav-caption, .security-note, .sidebar-profile { display: none; }
   .side-nav { display: flex; width: 100%; gap: 4px; margin: 0; overflow-x: auto; }
   .nav-link { min-height: 38px; flex: 1 0 auto; justify-content: center; gap: 6px; padding: 7px 9px; font-size: 10px; }
   .nav-link-arrow { display: none; }
   .sidebar-bottom { display: flex; justify-content: flex-end; margin: 0; }
-  .sidebar-bottom .logout-button { display: flex; flex: 0 0 auto; width: auto; min-height: 38px; align-self: flex-end; padding: 7px 12px; border: 1px solid #ffffff35; border-radius: 9px; color: #edf5ef; font-size: 12px; }
+  .sidebar-bottom .logout-desktop-button { display: none; }
   .main-content { padding: 0 16px 20px; }
   .topbar { min-height: 56px; }
   .topbar-status { font-size: 0; }

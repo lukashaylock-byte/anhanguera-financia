@@ -56,10 +56,15 @@ export default function AppSidebar({ fullName, email, companyId, companyName, wo
 
   return (
     <aside className="sidebar">
-      <Link href="/" className="brand">
-        <span className="brand-mark">A</span>
-        <span><span className="brand-name">Anhanguera</span><span className="brand-light">Financia</span></span>
-      </Link>
+      <div className="sidebar-header">
+        <Link href="/" className="brand">
+          <span className="brand-mark">A</span>
+          <span><span className="brand-name">Anhanguera</span><span className="brand-light">Financia</span></span>
+        </Link>
+        <button className="logout-button logout-mobile-button" type="button" onClick={onLogout}>
+          <span className="nav-icon" aria-hidden="true">↪</span>Sair da conta
+        </button>
+      </div>
       <label className="workspace-chip"><span className="workspace-icon">▦</span><span className="workspace-select-wrap"><strong>{workspaces.find((workspace) => workspace.id === companyId)?.workspaceType === 'PESSOAL' ? 'Espaço pessoal' : 'Empresa ativa'}</strong>
         {workspaces.length > 1
           ? <select aria-label="Trocar espaço financeiro" className="workspace-select" value={companyId} disabled={switching} onChange={(event) => void switchWorkspace(event.target.value)}>{workspaces.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.name} · {workspace.workspaceType === 'PESSOAL' ? 'Pessoal' : 'Empresa'}</option>)}</select>
@@ -84,7 +89,7 @@ export default function AppSidebar({ fullName, email, companyId, companyName, wo
       <div className="sidebar-bottom">
         <div className="security-note"><span className="security-dot" /><div><strong>Seus dados protegidos</strong><small>Acesso seguro à sua conta</small></div></div>
         <Link className="sidebar-profile" href="/perfil" aria-label="Abrir meu perfil"><span className="avatar">{fullName.slice(0, 1).toUpperCase() || 'U'}</span><div><strong>{fullName}</strong><small>{roleLabels[workspaces.find((workspace) => workspace.id === companyId)?.role ?? ''] ?? email ?? 'Conta financeira'}</small></div><span className="profile-arrow" aria-hidden="true">↗</span></Link>
-        <button className="nav-link logout-button" type="button" onClick={onLogout}><span className="nav-icon">↪</span>Sair da conta</button>
+        <button className="nav-link logout-button logout-desktop-button" type="button" onClick={onLogout}><span className="nav-icon">↪</span>Sair da conta</button>
       </div>
     </aside>
   );
