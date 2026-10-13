@@ -446,11 +446,12 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 760px) {
   .sidebar { position: static; width: 100%; min-height: 0; padding: 11px 14px; flex-direction: column; align-items: stretch; gap: 10px; }
   .sidebar > .brand { align-self: flex-start; font-size: 14px; }
-  .workspace-chip, .nav-caption, .security-note, .sidebar-profile, .logout-button { display: none; }
+  .workspace-chip, .nav-caption, .security-note, .sidebar-profile { display: none; }
   .side-nav { display: flex; width: 100%; gap: 4px; margin: 0; overflow-x: auto; }
   .nav-link { min-height: 38px; flex: 1 0 auto; justify-content: center; gap: 6px; padding: 7px 9px; font-size: 10px; }
   .nav-link-arrow { display: none; }
-  .sidebar-bottom { display: none; }
+  .sidebar-bottom { display: flex; justify-content: flex-end; margin: 0; }
+  .sidebar-bottom .logout-button { display: flex; flex: 0 0 auto; width: auto; min-height: 38px; align-self: flex-end; padding: 7px 12px; border: 1px solid #ffffff35; border-radius: 9px; color: #edf5ef; font-size: 12px; }
   .main-content { padding: 0 16px 20px; }
   .topbar { min-height: 56px; }
   .topbar-status { font-size: 0; }
