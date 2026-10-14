@@ -18,7 +18,7 @@ type Transaction = {
 };
 
 type Workspace = { id: string; name: string; role: string; workspaceType: string };
-type User = { fullName: string; email: string; companyId: string; companyName: string; workspaces: Workspace[] };
+type User = { fullName: string; email: string; companyId: string; companyName: string; role: string; workspaces: Workspace[] };
 
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const today = () => {
@@ -39,6 +39,7 @@ export default function ContasPage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState('');
   const [error, setError] = useState('');
+  const canManageTransactions = user?.role === 'ADMINISTRADOR' || user?.role === 'FINANCEIRO';
 
   const loadData = useCallback(async (): Promise<{ user: User; transactions: Transaction[] } | null> => {
     const [userResponse, transactionsResponse] = await Promise.all([
@@ -120,7 +121,7 @@ export default function ContasPage() {
       <AppSidebar fullName={user?.fullName ?? ''} email={user?.email} companyId={user?.companyId ?? ''} companyName={user?.companyName ?? ''} workspaces={user?.workspaces ?? []} onLogout={() => void logout()} />
       <main className="main-content">
         <header className="topbar"><div className="breadcrumb"><Link href="/">Painel</Link><span>/</span>Contas</div><div className="topbar-status"><span className="security-dot" />Visão financeira atualizada</div></header>
-        <section className="page-heading"><div><p className="eyebrow">CONTROLE DE PAGAMENTOS E RECEBIMENTOS</p><h1>Contas</h1><p className="muted">Acompanhe vencimentos e mantenha suas finanças em dia.</p></div><Link className="button button-primary" href="/?novo=1"><span>＋</span>Novo lançamento</Link></section>
+        <section className="page-heading"><div><p className="eyebrow">CONTROLE DE PAGAMENTOS E RECEBIMENTOS</p><h1>Contas</h1><p className="muted">Acompanhe vencimentos e mantenha suas finanças em dia.</p></div>{canManageTransactions && <Link className="button button-primary" href="/?novo=1"><span>＋</span>Novo lançamento</Link>}</section>
         {error && <div className="alert alert-error" role="alert">{error}</div>}
         <section className="panel account-period-bar"><div><span className="period-calendar">▦</span><div><strong>Período de acompanhamento</strong><small>Filtre contas pelo mês de vencimento</small></div></div><label className="field-label" htmlFor="accounts-month">Mês<input className="input-control" id="accounts-month" type="month" value={month} onChange={(event) => setMonth(event.target.value)} /></label></section>
         <section className="metrics-grid account-metrics" aria-label="Resumo das contas">
@@ -136,7 +137,7 @@ export default function ContasPage() {
             <select className="select-control" aria-label="Filtrar por tipo" value={kind} onChange={(event) => setKind(event.target.value as typeof kind)}><option value="TODOS">Todos os tipos</option><option value="DESPESA">A pagar</option><option value="RECEITA">A receber</option></select>
             <select className="select-control" aria-label="Filtrar por situação" value={status} onChange={(event) => setStatus(event.target.value as typeof status)}><option value="PENDENTE">Pendentes</option><option value="PAGO">Pagas / recebidas</option><option value="TODOS">Todas as situações</option></select>
           </div>
-          <div className="table-wrap"><table className="transactions-table accounts-table"><thead><tr><th>Vencimento</th><th>Conta</th><th>Centro de custo</th><th>Situação</th><th>Tipo</th><th className="align-right">Valor</th><th><span className="sr-only">Ações</span></th></tr></thead>
+          <div className="table-wrap"><table className="transactions-table accounts-table"><thead><tr><th>Vencimento</th><th>Conta</th><th>Centro de custo</th><th>Situação</th><th>Tipo</th><th className="align-right">Valor</th>{canManageTransactions && <th><span className="sr-only">Ações</span></th>}</tr></thead>
             <tbody>{visibleRows.map((transaction) => {
               const isOverdue = transaction.status === 'PENDENTE' && transaction.dueDate.slice(0, 10) < today();
               return <tr key={transaction.id} className={isOverdue ? 'account-overdue-row' : undefined}>
@@ -146,10 +147,10 @@ export default function ContasPage() {
                 <td><span className={`type-pill ${transaction.status === 'PAGO' ? 'type-income' : isOverdue ? 'type-expense' : 'status-pending'}`}>{transaction.status === 'PAGO' ? (transaction.type === 'RECEITA' ? 'Recebido' : 'Pago') : isOverdue ? 'Em atraso' : 'Pendente'}</span></td>
                 <td>{transaction.type === 'RECEITA' ? 'A receber' : 'A pagar'}</td>
                 <td className={`align-right amount-cell ${transaction.type === 'RECEITA' ? 'positive-text' : 'negative-text'}`}>{currency.format(transaction.amount)}</td>
-                <td>{transaction.status === 'PENDENTE' && <button className="button button-secondary settle-button" disabled={updating === transaction.id} onClick={() => void markAsSettled(transaction)}>{updating === transaction.id ? 'Salvando...' : transaction.type === 'RECEITA' ? '✓ Recebido' : '✓ Pago'}</button>}</td>
+                {canManageTransactions && <td>{transaction.status === 'PENDENTE' && <button className="button button-secondary settle-button" disabled={updating === transaction.id} onClick={() => void markAsSettled(transaction)}>{updating === transaction.id ? 'Salvando...' : transaction.type === 'RECEITA' ? '✓ Recebido' : '✓ Pago'}</button>}</td>}
               </tr>;
             })}
-            {!visibleRows.length && <tr><td colSpan={7}><div className="empty-state"><span className="empty-icon">▣</span><strong>Nenhuma conta encontrada</strong><p>{monthRows.length ? 'Ajuste os filtros para encontrar outras contas.' : 'Crie um lançamento com situação pendente para organizar os vencimentos.'}</p><Link className="button button-primary" href="/?novo=1">Adicionar lançamento</Link></div></td></tr>}
+            {!visibleRows.length && <tr><td colSpan={canManageTransactions ? 7 : 6}><div className="empty-state"><span className="empty-icon">▣</span><strong>Nenhuma conta encontrada</strong><p>{monthRows.length ? 'Ajuste os filtros para encontrar outras contas.' : 'Crie um lançamento com situação pendente para organizar os vencimentos.'}</p>{canManageTransactions && <Link className="button button-primary" href="/?novo=1">Adicionar lançamento</Link>}</div></td></tr>}
             </tbody>
           </table></div>
         </section>

@@ -70,6 +70,7 @@ export default function LoginPage() {
           <form className="auth-form" onSubmit={handleSubmit}>
             <label className="field-label" htmlFor="email">E-mail<input autoComplete="email" className="input-control" id="email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="voce@exemplo.com" /></label>
             <label className="field-label" htmlFor="password">Senha<input autoComplete="current-password" className="input-control" id="password" type="password" required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Sua senha" /></label>
+            <Link className="auth-forgot-link" href="/esqueci-senha">Esqueceu sua senha?</Link>
             <button className="button button-primary auth-submit" disabled={loading} type="submit">{loading ? 'Entrando...' : 'Entrar na conta'}<span>→</span></button>
           </form>
           <p className="auth-switch">Ainda não tem uma conta? <Link href="/register">Criar conta</Link></p>

@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac, createHash, timingSafeEqual } from 'node:crypto';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
@@ -125,6 +125,10 @@ export function setSessionCookie(response: NextResponse, userId: string, company
 
 export function hashInvitationToken(token: string) {
   return createHmac('sha256', getSessionSecret()).update(`invitation:${token}`).digest('hex');
+}
+
+export function hashPasswordResetToken(token: string) {
+  return createHash('sha256').update(token).digest('hex');
 }
 
 export function isUniqueConstraintError(error: unknown) {
