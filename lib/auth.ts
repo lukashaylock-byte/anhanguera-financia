@@ -6,7 +6,7 @@ import { readUserPersonalData } from '@/lib/personal-data.mjs';
 
 export const SESSION_COOKIE = 'meu-financeiro-session';
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
-export const COMPANY_ROLES = ['ADMINISTRADOR', 'FINANCEIRO', 'LEITURA'] as const;
+export const COMPANY_ROLES = ['ADMINISTRADOR', 'FINANCEIRO', 'OPERACIONAL', 'LEITURA'] as const;
 export type CompanyRole = typeof COMPANY_ROLES[number];
 
 export function isCompanyRole(value: unknown): value is CompanyRole {

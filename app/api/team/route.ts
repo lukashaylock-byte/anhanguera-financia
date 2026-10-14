@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { Prisma } from '@prisma/client';
 import { getAuthenticatedUser, isCompanyRole } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { emailLookupHash, normalizeEmail, readUserProfile } from '@/lib/personal-data.mjs';
+import { emailLookupHash, normalizeEmail, readInvitationEmail, readUserProfile } from '@/lib/personal-data.mjs';
 
 async function lockCompany(transaction: Prisma.TransactionClient, companyId: string) {
   await transaction.$queryRaw`SELECT "id" FROM "Company" WHERE "id" = ${companyId} FOR UPDATE`;
@@ -25,11 +25,31 @@ export async function GET() {
         user: { select: { id: true, fullName: true, fullNameEncrypted: true, email: true, emailEncrypted: true } },
       },
     });
+    const invitations = await prisma.invitation.findMany({
+      where: { companyId: user.companyId, acceptedAt: null, expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        email: true,
+        emailEncrypted: true,
+        emailLookupHash: true,
+        role: true,
+        expiresAt: true,
+        createdAt: true,
+      },
+    });
     return NextResponse.json({
       company: { id: user.companyId, name: user.companyName },
       memberships: memberships.map((membership) => ({
         ...membership,
         user: { id: membership.user.id, ...readUserProfile(membership.user) },
+      })),
+      invitations: invitations.map((invitation) => ({
+        id: invitation.id,
+        email: readInvitationEmail(invitation),
+        role: invitation.role,
+        expiresAt: invitation.expiresAt,
+        createdAt: invitation.createdAt,
       })),
     });
   } catch (error) {

@@ -13,7 +13,7 @@ type UserPersonalData = {
 };
 
 type InvitationPersonalData = {
-  id: string;
+  id?: string;
   email: string | null;
   emailEncrypted: string | null;
   emailLookupHash: string | null;

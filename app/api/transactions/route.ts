@@ -47,7 +47,7 @@ export async function GET() {
     const transactions = await prisma.transaction.findMany({
       where: { companyId: user.companyId },
       orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
-      select: { id: true, description: true, amount: true, type: true, category: true, date: true, dueDate: true, status: true, costCenter: true },
+      select: { id: true, userId: true, description: true, amount: true, type: true, category: true, date: true, dueDate: true, status: true, costCenter: true },
     });
     return NextResponse.json({ transactions });
   } catch (error) {
@@ -79,6 +79,9 @@ export async function POST(request: Request) {
       !values.date || !values.dueDate || !isTransactionStatus(values.status) ||
       !values.costCenter || values.costCenter.length > 80
     ) return NextResponse.json({ error: 'Confira a descrição, o valor, a categoria, o centro de custo e as datas.' }, { status: 400 });
+    if (user.role === 'OPERACIONAL' && values.status !== 'PENDENTE') {
+      return NextResponse.json({ error: 'O perfil operacional só pode criar lançamentos pendentes.' }, { status: 403 });
+    }
 
     const transaction = await prisma.transaction.create({
       data: {
@@ -93,7 +96,7 @@ export async function POST(request: Request) {
         costCenter: values.costCenter,
         companyId: user.companyId,
       },
-      select: { id: true, description: true, amount: true, type: true, category: true, date: true, dueDate: true, status: true, costCenter: true },
+      select: { id: true, userId: true, description: true, amount: true, type: true, category: true, date: true, dueDate: true, status: true, costCenter: true },
     });
     return NextResponse.json({ transaction }, { status: 201 });
   } catch (error) {
@@ -126,6 +129,33 @@ export async function PATCH(request: Request) {
       !values.costCenter || values.costCenter.length > 80
     ) return NextResponse.json({ error: 'Confira a descrição, o valor, a categoria, o centro de custo e as datas.' }, { status: 400 });
 
+    if (user.role === 'OPERACIONAL') {
+      const existing = await prisma.transaction.findFirst({
+        where: { id: input.id, companyId: user.companyId, userId: user.id },
+        select: { id: true, description: true, amount: true, type: true, category: true, date: true, dueDate: true, status: true, costCenter: true },
+      });
+      if (!existing) return NextResponse.json({ error: 'Lançamento não encontrado ou não pertence a você.' }, { status: 404 });
+      if (
+        existing.status !== 'PENDENTE' ||
+        values.status !== 'PAGO' ||
+        existing.description !== values.description ||
+        existing.amount !== values.amount ||
+        existing.type !== values.type ||
+        existing.category !== values.category ||
+        existing.date.getTime() !== values.date.getTime() ||
+        (existing.dueDate ?? existing.date).getTime() !== values.dueDate.getTime() ||
+        existing.costCenter !== values.costCenter
+      ) {
+        return NextResponse.json({ error: 'O perfil operacional só pode quitar seus próprios lançamentos sem alterar os dados.' }, { status: 403 });
+      }
+      const settled = await prisma.transaction.updateMany({
+        where: { id: existing.id, companyId: user.companyId, userId: user.id, status: 'PENDENTE' },
+        data: { status: 'PAGO' },
+      });
+      if (!settled.count) return NextResponse.json({ error: 'Este lançamento já foi atualizado.' }, { status: 409 });
+      return NextResponse.json({ message: 'Lançamento marcado como pago.' });
+    }
+
     const result = await prisma.transaction.updateMany({
       where: { id: input.id, companyId: user.companyId },
       data: {
@@ -151,7 +181,9 @@ export async function DELETE(request: Request) {
   try {
     const user = await getAuthenticatedUser();
     if (!user) return NextResponse.json({ error: 'Sessão expirada.' }, { status: 401 });
-    if (user.role === 'LEITURA') return NextResponse.json({ error: 'Seu perfil permite consultar, mas não excluir lançamentos.' }, { status: 403 });
+    if (user.role !== 'ADMINISTRADOR' && user.role !== 'FINANCEIRO') {
+      return NextResponse.json({ error: 'Seu perfil não permite excluir lançamentos.' }, { status: 403 });
+    }
     let input: unknown;
     try {
       input = await request.json();

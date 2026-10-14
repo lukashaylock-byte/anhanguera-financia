@@ -5,6 +5,7 @@ import DashboardClient from './dashboard-client';
 
 type DashboardTransaction = {
   id: string;
+  userId: string;
   description: string;
   amount: number;
   type: 'RECEITA' | 'DESPESA';
@@ -27,7 +28,7 @@ export default async function DashboardPage({
   const transactions = await prisma.transaction.findMany({
     where: { companyId: user.companyId },
     orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
-    select: { id: true, description: true, amount: true, type: true, category: true, date: true, dueDate: true, status: true, costCenter: true },
+    select: { id: true, userId: true, description: true, amount: true, type: true, category: true, date: true, dueDate: true, status: true, costCenter: true },
   });
   const initialTransactions: DashboardTransaction[] = transactions.map((transaction): DashboardTransaction => {
     const type = transaction.type;

@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma';
 export const maxLoginAttempts = 5;
 export const maxSignupAttempts = 3;
 export const maxPasswordResetAttempts = 3;
+export const maxInvitationAttempts = 5;
+export const maxInvitationEmailsPerAdmin = 10;
 
 function getRateLimitId(scope: string, identifier: string) {
   const secret = process.env.SESSION_SECRET;

@@ -421,6 +421,7 @@ a { color: inherit; text-decoration: none; }
 .role-badge { flex: 0 0 auto; display: inline-flex; align-items: center; min-height: 25px; padding: 0 9px; border-radius: 999px; font-size: 9px; font-weight: 700; white-space: nowrap; }
 .role-administrador { color: #795b18; background: #fbf3df; }
 .role-financeiro { color: #176b49; background: #e8f4eb; }
+.role-operacional { color: #7651a4; background: #f2ecfa; }
 .role-leitura { color: #526c80; background: #edf3f7; }
 .team-member-actions { display: flex; align-items: center; gap: 8px; }
 .team-member-actions .select-control { width: 150px; height: 35px; font-size: 10px; }
@@ -430,11 +431,14 @@ a { color: inherit; text-decoration: none; }
 .team-empty-state span { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 12px; color: #397b66; background: #eaf3ef; font-size: 18px; }
 .team-empty-state p { margin: 0; }
 .permissions-panel { margin-top: 16px; }
-.permission-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 17px; }
+.permission-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 17px; }
 .permission-grid article { display: grid; align-content: start; justify-items: start; gap: 10px; min-height: 90px; padding: 13px; border: 1px solid #edf2ee; border-radius: 11px; background: #fbfdfb; }
 .permission-grid p { margin: 0; color: #718277; font-size: 10px; line-height: 1.6; }
 .team-notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; padding: 11px 14px; border: 1px solid #cfe8d5; border-radius: 9px; color: #176b49; background: #eff8f0; font-size: 11px; }
 .team-notice button { border: 0; color: inherit; background: transparent; font-size: 17px; }
+.team-invitation-link { display: flex; align-items: end; gap: 10px; margin-top: 14px; }
+.team-invitation-link .field-label { flex: 1; min-width: 0; }
+.team-invitation-link .button { flex: 0 0 auto; }
 .workspace-select-wrap { flex: 1 1 auto; min-width: 0; }
 .workspace-select { width: 100%; margin-top: 4px; border: 0; outline: 0; color: #c6d6cb; background: transparent; font-size: 10px; }
 .workspace-select option { color: #173128; background: #fff; }
@@ -494,6 +498,8 @@ a { color: inherit; text-decoration: none; }
   .team-member-row > .role-badge { margin-left: 45px; }
   .team-member-actions { width: 100%; margin-left: 45px; }
   .team-member-actions .select-control { flex: 1; width: auto; }
+  .team-invitation-link { align-items: stretch; flex-direction: column; }
+  .team-invitation-link .button { align-self: flex-start; }
   .team-member-row > .current-member-label { margin-left: auto; }
   .permission-grid { grid-template-columns: 1fr; }
   .auth-layout { grid-template-columns: 1fr; }

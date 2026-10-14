@@ -26,6 +26,7 @@ const navigation = [
 const roleLabels: Record<string, string> = {
   ADMINISTRADOR: 'Administrador',
   FINANCEIRO: 'Financeiro',
+  OPERACIONAL: 'Operacional',
   LEITURA: 'Somente leitura',
 };
 

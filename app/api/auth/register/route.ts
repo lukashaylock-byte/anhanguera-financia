@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
-import { isUniqueConstraintError, setSessionCookie } from '@/lib/auth';
-import { encryptUserPersonalData, normalizeEmail } from '@/lib/personal-data.mjs';
+import { hashInvitationToken, isCompanyRole, isUniqueConstraintError, setSessionCookie } from '@/lib/auth';
+import { emailLookupHash, encryptUserPersonalData, normalizeEmail, readInvitationEmail } from '@/lib/personal-data.mjs';
 import { maxSignupAttempts, recordRateLimitAttempt } from '@/lib/login-rate-limit';
 
 function isValidCpf(value: string) {
@@ -33,20 +33,30 @@ export async function POST(request: Request) {
     const password = 'password' in input && typeof input.password === 'string' ? input.password : '';
     const cpf = 'cpf' in input && typeof input.cpf === 'string' ? input.cpf.replace(/\D/g, '') : '';
     const birthDate = 'birthDate' in input && typeof input.birthDate === 'string' ? input.birthDate : '';
-    const workspaceType = 'workspaceType' in input ? input.workspaceType : 'EMPRESA';
-    if (workspaceType !== 'EMPRESA' && workspaceType !== 'PESSOAL') {
+    const invitationToken = 'invitationToken' in input && typeof input.invitationToken === 'string' ? input.invitationToken : '';
+    const requestedWorkspaceType = 'workspaceType' in input ? input.workspaceType : 'EMPRESA';
+    if (requestedWorkspaceType !== 'EMPRESA' && requestedWorkspaceType !== 'PESSOAL') {
       return NextResponse.json({ error: 'Selecione um tipo de espaço válido.' }, { status: 400 });
     }
+    const workspaceType = invitationToken ? 'EMPRESA' : requestedWorkspaceType;
     const companyName = 'companyName' in input && typeof input.companyName === 'string'
       ? input.companyName.trim()
       : '';
     const workspaceName = workspaceType === 'PESSOAL' ? fullName : companyName;
 
-    if (!fullName || !email || !password || !cpf || !birthDate || !workspaceName) {
+    if (!fullName || !email || !password || !cpf || !birthDate || (!invitationToken && !workspaceName)) {
       return NextResponse.json({ error: 'Preencha todos os campos obrigatórios.' }, { status: 400 });
     }
-    if (fullName.length > 120 || workspaceName.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+    if (
+      fullName.length > 120 ||
+      (!invitationToken && workspaceName.length > 120) ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+      email.length > 254
+    ) {
       return NextResponse.json({ error: 'Confira o nome, o nome do espaço e o endereço de e-mail.' }, { status: 400 });
+    }
+    if (invitationToken && !/^[A-Za-z0-9_-]{40,60}$/.test(invitationToken)) {
+      return NextResponse.json({ error: 'Este convite é inválido ou expirou.' }, { status: 400 });
     }
     if (password.length < 8 || password.length > 72) {
       return NextResponse.json({ error: 'A senha deve ter entre 8 e 72 caracteres.' }, { status: 400 });
@@ -72,7 +82,42 @@ export async function POST(request: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    const user = await prisma.$transaction(async (transaction) => {
+    const account = await prisma.$transaction(async (transaction) => {
+      let invitedCompanyId: string | null = null;
+      let invitedRole: string | null = null;
+      if (invitationToken) {
+        const now = new Date();
+        const invitation = await transaction.invitation.findUnique({
+          where: { tokenHash: hashInvitationToken(invitationToken) },
+          select: {
+            id: true,
+            companyId: true,
+            email: true,
+            emailEncrypted: true,
+            emailLookupHash: true,
+            role: true,
+            expiresAt: true,
+            acceptedAt: true,
+          },
+        });
+        if (
+          !invitation ||
+          invitation.acceptedAt ||
+          invitation.expiresAt <= now ||
+          !isCompanyRole(invitation.role)
+        ) throw new Error('INVITATION_INVALID');
+        if (invitation.emailLookupHash !== emailLookupHash(email) || readInvitationEmail(invitation) !== email) {
+          throw new Error('INVITATION_EMAIL_MISMATCH');
+        }
+        const claim = await transaction.invitation.updateMany({
+          where: { id: invitation.id, acceptedAt: null, expiresAt: { gt: now } },
+          data: { acceptedAt: now },
+        });
+        if (!claim.count) throw new Error('INVITATION_INVALID');
+        invitedCompanyId = invitation.companyId;
+        invitedRole = invitation.role;
+      }
+
       const id = randomUUID();
       const createdUser = await transaction.user.create({
         data: {
@@ -81,6 +126,12 @@ export async function POST(request: Request) {
           ...encryptUserPersonalData(id, { fullName, email, cpf, birthDate: parsedBirthDate }),
         },
       });
+      if (invitedCompanyId && invitedRole) {
+        await transaction.membership.create({
+          data: { userId: createdUser.id, companyId: invitedCompanyId, role: invitedRole },
+        });
+        return { ...createdUser, companyId: invitedCompanyId };
+      }
       const company = await transaction.company.create({ data: { name: workspaceName, workspaceType } });
       await transaction.membership.create({
         data: { userId: createdUser.id, companyId: company.id, role: 'ADMINISTRADOR' },
@@ -88,10 +139,16 @@ export async function POST(request: Request) {
       return { ...createdUser, companyId: company.id };
     });
 
-    const response = NextResponse.json({ message: 'Conta criada com sucesso!', userId: user.id }, { status: 201 });
-    setSessionCookie(response, user.id, user.companyId);
+    const response = NextResponse.json({ message: 'Conta criada com sucesso!', userId: account.id }, { status: 201 });
+    setSessionCookie(response, account.id, account.companyId);
     return response;
   } catch (error) {
+    if (error instanceof Error && error.message === 'INVITATION_INVALID') {
+      return NextResponse.json({ error: 'Este convite é inválido, já foi aceito ou expirou.' }, { status: 400 });
+    }
+    if (error instanceof Error && error.message === 'INVITATION_EMAIL_MISMATCH') {
+      return NextResponse.json({ error: 'Use o mesmo e-mail para o qual este convite foi enviado.' }, { status: 403 });
+    }
     if (isUniqueConstraintError(error)) {
       return NextResponse.json({ error: 'Este e-mail ou CPF já está cadastrado.' }, { status: 409 });
     }

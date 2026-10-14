@@ -7,6 +7,7 @@ import AppSidebar from './components/app-sidebar';
 
 type Transaction = {
   id: string;
+  userId: string;
   description: string;
   amount: number;
   type: 'RECEITA' | 'DESPESA';
@@ -46,7 +47,11 @@ export default function DashboardClient({
 }) {
   const router = useRouter();
   const [user] = useState<User>(initialUser);
-  const canManageTransactions = user.role !== 'LEITURA';
+  const canCreateTransactions = user.role === 'ADMINISTRADOR' || user.role === 'FINANCEIRO' || user.role === 'OPERACIONAL';
+  const canEditTransactions = user.role === 'ADMINISTRADOR' || user.role === 'FINANCEIRO';
+  const canSettleTransaction = (transaction: Transaction) => (
+    canEditTransactions || (user.role === 'OPERACIONAL' && transaction.userId === user.id)
+  );
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [error, setError] = useState('');
   const [month, setMonth] = useState(currentMonth());
@@ -142,6 +147,7 @@ export default function DashboardClient({
 
   const saveTransaction = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (editing && !canEditTransactions) return;
     setSaving(true);
     setError('');
     try {
@@ -276,7 +282,7 @@ export default function DashboardClient({
 
         <section className="page-heading">
           <div><p className="eyebrow">SEU RESUMO FINANCEIRO</p><h1>Visão geral</h1><p className="muted">Acompanhe sua vida financeira em um só lugar.</p></div>
-          {canManageTransactions && <button className="button button-primary" id="novo-lancamento" onClick={openNewTransaction}><span>＋</span> Novo lançamento</button>}
+          {canCreateTransactions && <button className="button button-primary" id="novo-lancamento" onClick={openNewTransaction}><span>＋</span> Novo lançamento</button>}
         </section>
 
         {error && <div className="alert alert-error" role="alert">{error}<button onClick={() => setError('')} aria-label="Fechar aviso">×</button></div>}
@@ -317,21 +323,21 @@ export default function DashboardClient({
             <select className="select-control" aria-label="Filtrar por tipo" value={filter} onChange={(event) => setFilter(event.target.value)}><option value="TODOS">Todos os tipos</option><option value="RECEITA">Entradas</option><option value="DESPESA">Saídas</option></select>
             <select className="select-control" aria-label="Filtrar por situação" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="TODOS">Todas as situações</option><option value="PENDENTE">Pendentes</option><option value="PAGO">Pagos / recebidos</option></select>
           </div>
-          <div className="table-wrap"><table className="transactions-table"><thead><tr><th>Descrição</th><th>Categoria</th><th>Centro de custo</th><th>Vencimento</th><th>Situação</th><th>Tipo</th><th className="align-right">Valor</th>{canManageTransactions && <th><span className="sr-only">Ações</span></th>}</tr></thead>
+          <div className="table-wrap"><table className="transactions-table"><thead><tr><th>Descrição</th><th>Categoria</th><th>Centro de custo</th><th>Vencimento</th><th>Situação</th><th>Tipo</th><th className="align-right">Valor</th>{canCreateTransactions && <th><span className="sr-only">Ações</span></th>}</tr></thead>
             <tbody>{visibleTransactions.map((transaction) => <tr key={transaction.id}>
               <td><strong className="transaction-description">{transaction.description}</strong></td><td><span className="category-pill">{transaction.category}</span></td><td>{transaction.costCenter}</td><td>{new Date(`${transaction.dueDate.slice(0, 10)}T12:00:00`).toLocaleDateString('pt-BR')}</td>
               <td><span className={`type-pill ${transaction.status === 'PAGO' ? 'type-income' : transaction.dueDate.slice(0, 10) < today() ? 'type-expense' : 'status-pending'}`}>{transaction.status === 'PAGO' ? (transaction.type === 'RECEITA' ? 'Recebido' : 'Pago') : transaction.dueDate.slice(0, 10) < today() ? 'Atrasado' : 'Pendente'}</span></td>
               <td><span className={`type-pill ${transaction.type === 'RECEITA' ? 'type-income' : 'type-expense'}`}>{transaction.type === 'RECEITA' ? 'Entrada' : 'Saída'}</span></td>
               <td className={`align-right amount-cell ${transaction.type === 'RECEITA' ? 'positive-text' : 'negative-text'}`}>{transaction.type === 'DESPESA' ? '− ' : '+ '}{currency.format(transaction.amount)}</td>
-              {canManageTransactions && <td><div className="row-actions">{transaction.status === 'PENDENTE' && <button className="mark-paid-button" aria-label={transaction.type === 'RECEITA' ? `Marcar ${transaction.description} como recebido` : `Marcar ${transaction.description} como pago`} title={transaction.type === 'RECEITA' ? 'Marcar como recebido' : 'Marcar como pago'} disabled={updatingId === transaction.id} onClick={() => void markAsPaid(transaction)}>✓</button>}<button aria-label={`Editar ${transaction.description}`} title="Editar" onClick={() => openEditTransaction(transaction)}>✎</button><button aria-label={`Excluir ${transaction.description}`} title="Excluir" onClick={() => void deleteTransaction(transaction)}>×</button></div></td>}
+              {canCreateTransactions && <td><div className="row-actions">{transaction.status === 'PENDENTE' && canSettleTransaction(transaction) && <button className="mark-paid-button" aria-label={transaction.type === 'RECEITA' ? `Marcar ${transaction.description} como recebido` : `Marcar ${transaction.description} como pago`} title={transaction.type === 'RECEITA' ? 'Marcar como recebido' : 'Marcar como pago'} disabled={updatingId === transaction.id} onClick={() => void markAsPaid(transaction)}>✓</button>}{canEditTransactions && <><button aria-label={`Editar ${transaction.description}`} title="Editar" onClick={() => openEditTransaction(transaction)}>✎</button><button aria-label={`Excluir ${transaction.description}`} title="Excluir" onClick={() => void deleteTransaction(transaction)}>×</button></>}</div></td>}
             </tr>)}
-            {!visibleTransactions.length && <tr><td colSpan={canManageTransactions ? 8 : 7}><div className="empty-state"><span className="empty-icon">▤</span><strong>Nenhum lançamento encontrado</strong><p>{monthTransactions.length ? 'Experimente mudar os filtros.' : 'Adicione seu primeiro lançamento para começar a acompanhar suas finanças.'}</p>{canManageTransactions && !monthTransactions.length && <button className="button button-primary" onClick={openNewTransaction}>Adicionar lançamento</button>}</div></td></tr>}
+            {!visibleTransactions.length && <tr><td colSpan={canCreateTransactions ? 8 : 7}><div className="empty-state"><span className="empty-icon">▤</span><strong>Nenhum lançamento encontrado</strong><p>{monthTransactions.length ? 'Experimente mudar os filtros.' : 'Adicione seu primeiro lançamento para começar a acompanhar suas finanças.'}</p>{canCreateTransactions && !monthTransactions.length && <button className="button button-primary" onClick={openNewTransaction}>Adicionar lançamento</button>}</div></td></tr>}
             </tbody></table></div>
         </section>
         <footer className="app-footer">Anhanguera Financia <span>•</span> Seus dados financeiros, organizados com clareza.</footer>
       </main>
 
-      {showForm && canManageTransactions && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowForm(false); }}>
+      {showForm && canCreateTransactions && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowForm(false); }}>
         <section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="transaction-modal-title">
           <div className="modal-heading"><div><p className="eyebrow">{editing ? 'ATUALIZE OS DADOS' : 'REGISTRE UMA MOVIMENTAÇÃO'}</p><h2 id="transaction-modal-title">{editing ? 'Editar lançamento' : 'Novo lançamento'}</h2></div><button className="modal-close" onClick={() => setShowForm(false)} aria-label="Fechar">×</button></div>
           <form className="transaction-form" onSubmit={saveTransaction}>
@@ -340,7 +346,7 @@ export default function DashboardClient({
             <div className="form-row"><label className="field-label">Valor (R$)<input className="input-control" type="number" min="0.01" step="0.01" required placeholder="0,00" value={amount} onChange={(event) => setAmount(event.target.value)} /></label>
               <label className="field-label">Data do lançamento<input className="input-control" type="date" required value={date} onChange={(event) => setDate(event.target.value)} /></label></div>
             <div className="form-row"><label className="field-label">Vencimento<input className="input-control" type="date" required value={dueDate} onChange={(event) => setDueDate(event.target.value)} /></label>
-              <label className="field-label">Situação<select className="input-control" value={status} onChange={(event) => setStatus(event.target.value as 'PENDENTE' | 'PAGO')}><option value="PENDENTE">Pendente</option><option value="PAGO">Pago / recebido</option></select></label></div>
+              {canEditTransactions && <label className="field-label">Situação<select className="input-control" value={status} onChange={(event) => setStatus(event.target.value as 'PENDENTE' | 'PAGO')}><option value="PENDENTE">Pendente</option><option value="PAGO">Pago / recebido</option></select></label>}</div>
             <div className="form-row"><label className="field-label">Categoria<input className="input-control" maxLength={60} required placeholder="Ex.: Fornecedores, marketing" value={category} onChange={(event) => setCategory(event.target.value)} /></label>
               <label className="field-label">Centro de custo<input className="input-control" maxLength={80} required placeholder="Ex.: Operações, filial Centro" value={costCenter} onChange={(event) => setCostCenter(event.target.value)} /></label></div>
             {error && <div className="alert alert-error" role="alert">{error}</div>}
